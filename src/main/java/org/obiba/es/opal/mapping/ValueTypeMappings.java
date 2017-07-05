@@ -11,7 +11,6 @@ package org.obiba.es.opal.mapping;
 
 import com.google.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.obiba.es.opal.mapping.ValueTypeMapping;
 import org.obiba.magma.ValueType;
 import org.obiba.magma.type.*;
 

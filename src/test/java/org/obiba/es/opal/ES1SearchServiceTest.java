@@ -15,14 +15,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.obiba.core.util.FileUtil;
 import org.obiba.opal.spi.ServicePlugin;
-import org.obiba.opal.spi.vcf.VCFStoreService;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Properties;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ES1SearchServiceTest {
 
