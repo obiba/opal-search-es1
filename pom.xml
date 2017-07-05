@@ -1,0 +1,506 @@
+<!--
+  ~ Copyright (c) 2017 OBiBa. All rights reserved.
+  ~
+  ~ This program and the accompanying materials
+  ~ are made available under the terms of the GNU Public License v3.0.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses />.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.obiba.es</groupId>
+  <artifactId>opal-search-es1</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>opal-search-es1</name>
+  <url>http://obiba.org</url>
+
+  <licenses>
+    <license>
+      <name>GNU Public License version 3</name>
+      <url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <obiba.deploy.dir>unstable</obiba.deploy.dir>
+
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+
+    <assertj-core.version>1.7.1</assertj-core.version>
+    <elasticsearch.version>1.7.1</elasticsearch.version>
+    <junit.version>4.12</junit.version>
+    <logback.version>1.1.3</logback.version>
+    <obiba-commons.version>1.8.4</obiba-commons.version>
+    <opal.version>2.10-SNAPSHOT</opal.version>
+    <slf4j.version>1.5.6</slf4j.version>
+
+    <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
+    <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
+    <maven-buildnumber-plugin.version>1.2</maven-buildnumber-plugin.version>
+    <maven-dependency-plugin.version>2.1</maven-dependency-plugin.version>
+    <maven-enforcer-plugin.version>1.3.1</maven-enforcer-plugin.version>
+    <maven-findbugs-plugin.version>2.5.3</maven-findbugs-plugin.version>
+    <maven-pmd-plugin.version>3.1</maven-pmd-plugin.version>
+    <maven-release-plugin.version>2.5.2</maven-release-plugin.version>
+    <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
+    <rpm-maven-plugin.version>2.1.4</rpm-maven-plugin.version>
+
+    <obiba.deploy.dir>unstable</obiba.deploy.dir>
+    <install.dir>/usr/share</install.dir>
+    <package.name>opal-search-es1-dist-${project.version}</package.name>
+    <dist.location>${basedir}/target/${package.name}-dist/${package.name}</dist.location>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.obiba.opal</groupId>
+      <artifactId>opal-spi</artifactId>
+      <version>${opal.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.obiba.commons</groupId>
+      <artifactId>obiba-core</artifactId>
+      <version>${obiba-commons.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${elasticsearch.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <type>jar</type>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl104-over-slf4j</artifactId>
+      <version>${slf4j.version}</version>
+      <type>jar</type>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj-core.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-access</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+
+    <!-- Use log4j during testing -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <message>You are running an older version of Maven. Mica requires at least Maven 3.0</message>
+                  <version>[3.0.0,)</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <message>You are running an older version of Java. Mica requires at least JDK 1.7</message>
+                  <version>[1.7.0,)</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>${maven-findbugs-plugin.version}</version>
+        <configuration>
+          <failOnError>false</failOnError>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>${maven-buildnumber-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>createBuildNumber</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <format>{0,date,yyyyMMddHHmmss}</format>
+              <items>
+                <item>timestamp</item>
+              </items>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <overwrite>true</overwrite>
+              <outputDirectory>${basedir}/target</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}</directory>
+                  <includes>
+                    <include>LICENSE.txt</include>
+                    <include>README.md</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>${basedir}/src/main/conf</directory>
+                  <includes>
+                    <include>plugin.properties</include>
+                    <include>site.properties</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/plugin.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <!-- A profile for the builds performed by the continuous integration server -->
+      <id>ci-build</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>${maven-antrun-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>make-deb</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo message="Starting ant-run target configuration."/>
+                    <property name="deb.dir" value="${basedir}/target/deb"/>
+                    <property name="deb.version" value="${project.version}-b${buildNumber}"/>
+                    <tstamp>
+                      <!-- http://www.debian.org/doc/debian-policy/ch-source.html -->
+                      <format property="deb.date" pattern="EEE, d MMM yyyy HH:mm:ss Z" locale="en"/>
+                    </tstamp>
+
+                    <mkdir dir="${deb.dir}/usr/share"/>
+                    <unzip src="${basedir}/target/opal-search-es1-${project.version}-dist.zip"
+                           dest="${deb.dir}/usr/share"/>
+
+                    <copy todir="${deb.dir}">
+                      <fileset dir="src/main/dist/deb"/>
+                      <filterset>
+                        <filter token="project.version" value="${deb.version}"/>
+                        <filter token="date" value="${deb.date}"/>
+                      </filterset>
+                    </copy>
+
+                    <exec executable="debuild" dir="${deb.dir}" failonerror="true" osfamily="unix">
+                      <arg value="-b"/>
+                      <!-- Uncomment following options to package locally  -->
+                      <!--<arg value="-i" />-->
+                      <!--<arg value="-us" />-->
+                      <!--<arg value="-uc" />-->
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>deploy-deb</id>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="deb.version" value="${project.version}-b${buildNumber}"/>
+                    <!-- Deploy deb file in deb repo -->
+                    <copy file="target/opal-search-es1_${deb.version}_all.deb"
+                          todir="${obiba.deb.dir}/${obiba.deploy.dir}"/>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>deploy-package</id>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <!-- Deploy Opal package file in download repo -->
+                    <copy todir="${obiba.download.dir}/plugins/${obiba.deploy.dir}"
+                          file="target/opal-search-es1-${project.version}-dist.zip"/>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>deploy-rpm</id>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <!-- Deploy rpm file in rpm repo -->
+                    <copy todir="${obiba.rpm.dir}/${obiba.deploy.dir}">
+                      <fileset dir="target/rpm/opal-search-es1/RPMS/noarch"/>
+                    </copy>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>rpm-maven-plugin</artifactId>
+            <version>${rpm-maven-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>make-rpm</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>attached-rpm</goal>
+                </goals>
+                <configuration>
+                  <name>opal-search-es1</name>
+                  <needarch>noarch</needarch>
+                  <version>${project.version}</version>
+                  <license>see /usr/share/doc/opal/copyright</license>
+                  <group>Applications/Engineering</group>
+                  <packager>OBiBa</packager>
+                  <prefix>/usr/share</prefix>
+                  <changelogFile>/usr/share/changelog</changelogFile>
+                  <targetOS>Linux</targetOS>
+                  <requires>
+                    <require>opal-server</require>
+                    <require>unzip</require>
+                  </requires>
+                  <postinstallScriptlet>
+                    <scriptFile>src/main/dist/rpm/scripts/postinstall.sh</scriptFile>
+                    <fileEncoding>utf-8</fileEncoding>
+                  </postinstallScriptlet>
+
+                  <mappings>
+                    <mapping>
+                      <directory>/usr/share/opal-search-es1</directory>
+                      <filemode>640</filemode>
+                      <username>opal</username>
+                      <groupname>adm</groupname>
+                      <configuration>true</configuration>
+                      <sources>
+                        <source>
+                          <location>${basedir}/target/opal-search-es1-${project.version}-dist.zip</location>
+                        </source>
+                      </sources>
+                    </mapping>
+                  </mappings>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <repositories>
+    <repository>
+      <id>obiba.org</id>
+      <name>Obiba Maven 2.x Repository</name>
+      <url>http://repo.obiba.org/repo</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>obiba</id>
+      <url>http://repo.obiba.org/repo</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <prerequisites>
+    <maven>3.0.0</maven>
+  </prerequisites>
+
+  <distributionManagement>
+
+    <repository>
+      <id>obiba-releases</id>
+      <url>http://repo.obiba.org/libs-release-local</url>
+    </repository>
+
+    <snapshotRepository>
+      <id>obiba-snapshots</id>
+      <url>http://repo.obiba.org/libs-snapshot-local</url>
+    </snapshotRepository>
+
+  </distributionManagement>
+
+  <scm>
+    <connection>scm:git:git://github.com/obiba/opal-search-es1.git</connection>
+    <developerConnection>scm:git:https://github.com/obiba/opal-search-es1.git</developerConnection>
+    <url>https://github.com/obiba/opal-search-es1</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://jira.obiba.org</url>
+  </issueManagement>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>http://ci.obiba.org/view/Opal/job/Opal</url>
+  </ciManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>OBiBa Users</name>
+      <post>obiba-users@googlegroups.com</post>
+      <archive>https://groups.google.com/forum/?fromgroups#!forum/obiba-users</archive>
+    </mailingList>
+  </mailingLists>
+
+
+</project>
