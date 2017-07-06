@@ -7,13 +7,12 @@
   ~ You should have received a copy of the GNU General Public License
   ~ along with this program.  If not, see <http://www.gnu.org/licenses />.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.obiba.es</groupId>
   <artifactId>opal-search-es</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>2.0-SNAPSHOT</version>
   <name>opal-search-es</name>
   <url>http://obiba.org</url>
 
@@ -309,28 +308,27 @@
                 </goals>
                 <configuration>
                   <target>
-                    <echo message="Starting ant-run target configuration."/>
-                    <property name="deb.dir" value="${basedir}/target/deb"/>
-                    <property name="deb.version" value="${project.version}-b${buildNumber}"/>
+                    <echo message="Starting ant-run target configuration." />
+                    <property name="deb.dir" value="${basedir}/target/deb" />
+                    <property name="deb.version" value="${project.version}-b${buildNumber}" />
                     <tstamp>
                       <!-- http://www.debian.org/doc/debian-policy/ch-source.html -->
-                      <format property="deb.date" pattern="EEE, d MMM yyyy HH:mm:ss Z" locale="en"/>
+                      <format property="deb.date" pattern="EEE, d MMM yyyy HH:mm:ss Z" locale="en" />
                     </tstamp>
 
-                    <mkdir dir="${deb.dir}/usr/share"/>
-                    <unzip src="${basedir}/target/opal-search-es-${project.version}-dist.zip"
-                           dest="${deb.dir}/usr/share"/>
+                    <mkdir dir="${deb.dir}/usr/share" />
+                    <unzip src="${basedir}/target/opal-search-es-${project.version}-dist.zip" dest="${deb.dir}/usr/share" />
 
                     <copy todir="${deb.dir}">
-                      <fileset dir="src/main/dist/deb"/>
+                      <fileset dir="src/main/dist/deb" />
                       <filterset>
-                        <filter token="project.version" value="${deb.version}"/>
-                        <filter token="date" value="${deb.date}"/>
+                        <filter token="project.version" value="${deb.version}" />
+                        <filter token="date" value="${deb.date}" />
                       </filterset>
                     </copy>
 
                     <exec executable="debuild" dir="${deb.dir}" failonerror="true" osfamily="unix">
-                      <arg value="-b"/>
+                      <arg value="-b" />
                       <!-- Uncomment following options to package locally  -->
                       <!--<arg value="-i" />-->
                       <!--<arg value="-us" />-->
@@ -347,10 +345,9 @@
                 </goals>
                 <configuration>
                   <target>
-                    <property name="deb.version" value="${project.version}-b${buildNumber}"/>
+                    <property name="deb.version" value="${project.version}-b${buildNumber}" />
                     <!-- Deploy deb file in deb repo -->
-                    <copy file="target/opal-search-es_${deb.version}_all.deb"
-                          todir="${obiba.deb.dir}/${obiba.deploy.dir}"/>
+                    <copy file="target/opal-search-es_${deb.version}_all.deb" todir="${obiba.deb.dir}/${obiba.deploy.dir}" />
                   </target>
                 </configuration>
               </execution>
@@ -363,8 +360,7 @@
                 <configuration>
                   <target>
                     <!-- Deploy Opal package file in download repo -->
-                    <copy todir="${obiba.download.dir}/plugins/${obiba.deploy.dir}"
-                          file="target/opal-search-es-${project.version}-dist.zip"/>
+                    <copy todir="${obiba.download.dir}/plugins/${obiba.deploy.dir}" file="target/opal-search-es-${project.version}-dist.zip" />
                   </target>
                 </configuration>
               </execution>
@@ -378,7 +374,7 @@
                   <target>
                     <!-- Deploy rpm file in rpm repo -->
                     <copy todir="${obiba.rpm.dir}/${obiba.deploy.dir}">
-                      <fileset dir="target/rpm/opal-search-es/RPMS/noarch"/>
+                      <fileset dir="target/rpm/opal-search-es/RPMS/noarch" />
                     </copy>
                   </target>
                 </configuration>
