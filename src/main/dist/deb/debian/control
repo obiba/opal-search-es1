@@ -1,4 +1,4 @@
-Source: opal-search-es1
+Source: opal-search-es
 Section: devel
 Priority: extra
 Maintainer: OBiBa <info@obiba.org>
@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7.0.15)
 Standards-Version: 3.8.4
 Homepage: http://www.obiba.org
 
-Package: opal-search-es1
+Package: opal-search-es
 Architecture: all
 Pre-Depends:
 Depends: opal (>= 2.10)

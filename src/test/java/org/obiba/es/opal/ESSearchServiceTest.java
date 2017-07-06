@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
-public class ES1SearchServiceTest {
+public class ESSearchServiceTest {
 
   @Before
   public void setUp() throws IOException {
@@ -37,11 +37,11 @@ public class ES1SearchServiceTest {
 
   @Test
   public void testService() {
-    ES1SearchService service = createService();
+    ESSearchService service = createService();
   }
 
-  private ES1SearchService createService() {
-    ES1SearchService service = new ES1SearchService();
+  private ESSearchService createService() {
+    ESSearchService service = new ESSearchService();
     service.configure(getDefaultProperties());
     service.start();
     return service;

@@ -17,18 +17,18 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
 import java.io.IOException;
 import java.util.Map;
 
-class ES1Mapping {
+class ESMapping {
 
   private final String name;
 
   private final Map<String, Object> mapping;
 
-  ES1Mapping(String name, byte... mappingSource) throws IOException {
+  ESMapping(String name, byte... mappingSource) throws IOException {
     this.name = name;
     mapping = XContentFactory.xContent(mappingSource).createParser(mappingSource).map();
   }
 
-  ES1Mapping(String name) throws IOException {
+  ESMapping(String name) throws IOException {
     this.name = name;
     mapping = Maps.newHashMap();
   }

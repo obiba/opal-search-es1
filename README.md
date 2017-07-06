@@ -1,6 +1,6 @@
-# Opal Search Elasticsearch 1.x
+# Opal Search Elasticsearch
 
-Opal plugin that provides a search engine based on  [elasticsearch 1.x](http://elasticsearch.org/).
+Opal plugin that provides a search engine based on  [elasticsearch](http://elasticsearch.org/).
 
 Opal is OBiBa’s core database application for biobanks or epidemiological studies.
 
@@ -24,7 +24,7 @@ Have a bug? Please create an issue on [OBiBa JIRA](http://jira.obiba.org/jira/br
 
 ## Continuous integration
 
-See [OBiBa Jenkins](https://ci.obiba.org/view/Opal/job/Opal-search-ES1/).
+See [OBiBa Jenkins](https://ci.obiba.org/view/Opal/job/Opal-search-ES/).
 
 ## Mailing list
 

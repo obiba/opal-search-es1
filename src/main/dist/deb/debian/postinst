@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for opal-search-es1
+# postinst script for opal-search-es
 #
 # see: dh_installdeb(1)
 
@@ -14,13 +14,13 @@ case "$1" in
         . /etc/default/opal
         mkdir -p $OPAL_HOME/plugins
         if [ -d "$OPAL_HOME"/plugins ]; then
-          OLD_PLUGIN=$(ls -t "$OPAL_HOME"/plugins/ | grep opal-search-es1 | head -1)
+          OLD_PLUGIN=$(ls -t "$OPAL_HOME"/plugins/ | grep opal-search-es | head -1)
 
-          cp -r /usr/share/opal-search-es1* $OPAL_HOME/plugins
+          cp -r /usr/share/opal-search-es* $OPAL_HOME/plugins
 
           if [ ! -z "$OLD_PLUGIN" ] && [ -f $OPAL_HOME/plugins/$OLD_PLUGIN/site.properties ]; then
             echo "Copying $OLD_PLUGIN/site.properties to new installation."
-            NEW_PLUGIN=$(ls -t $OPAL_HOME/plugins/ | grep opal-search-es1 | head -1)
+            NEW_PLUGIN=$(ls -t $OPAL_HOME/plugins/ | grep opal-search-es | head -1)
             cp $OPAL_HOME/plugins/$OLD_PLUGIN/site.properties $OPAL_HOME/plugins/$NEW_PLUGIN/
           fi
 

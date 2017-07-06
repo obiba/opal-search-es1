@@ -18,8 +18,8 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.node.internal.InternalNode;
 import org.elasticsearch.rest.RestController;
-import org.obiba.es.opal.support.ES1QueryExecutor;
-import org.obiba.es.opal.support.ES1SearchQueryExecutor;
+import org.obiba.es.opal.support.ESQueryExecutor;
+import org.obiba.es.opal.support.ESSearchQueryExecutor;
 import org.obiba.opal.search.support.ValueTableIndexManager;
 import org.obiba.opal.spi.search.*;
 import org.obiba.opal.web.model.Search;
@@ -29,7 +29,9 @@ import java.net.MalformedURLException;
 import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
 
-public class ES1SearchService implements SearchService {
+public class ESSearchService implements SearchService {
+
+  private static final int TERMS_FACETS_SIZE_LIMIT = 200;
 
   private Properties properties;
 
@@ -38,8 +40,6 @@ public class ES1SearchService implements SearchService {
   private Node esNode;
 
   private Client client;
-
-  private int termsFacetSizeLimit;
 
   private SearchSettings settings;
 
@@ -57,7 +57,7 @@ public class ES1SearchService implements SearchService {
 
   @Override
   public String getName() {
-    return "opal-search-es1";
+    return "opal-search-es";
   }
 
   @Override
@@ -138,14 +138,14 @@ public class ES1SearchService implements SearchService {
   @Override
   public VariablesIndexManager getVariablesIndexManager() {
     if (variablesIndexManager == null)
-      variablesIndexManager = new ES1VariablesIndexManager(this);
+      variablesIndexManager = new ESVariablesIndexManager(this);
     return variablesIndexManager;
   }
 
   @Override
   public ValuesIndexManager getValuesIndexManager() {
     if (valuesIndexManager == null)
-      valuesIndexManager = new ES1ValuesIndexManager(this, variableSummaryHandler, threadFactory);
+      valuesIndexManager = new ESValuesIndexManager(this, variableSummaryHandler, threadFactory);
     return valuesIndexManager;
   }
 
@@ -155,7 +155,7 @@ public class ES1SearchService implements SearchService {
 
   @Override
   public JSONObject executeQuery(JSONObject jsonQuery, String searchPath) throws JSONException {
-    ES1QueryExecutor executor = new ES1QueryExecutor(this).setSearchPath(searchPath);
+    ESQueryExecutor executor = new ESQueryExecutor(this).setSearchPath(searchPath);
     return executor.executePost(jsonQuery);
   }
 
@@ -188,12 +188,15 @@ public class ES1SearchService implements SearchService {
 
   private SearchQueryExecutor createQueryExecutor(String datasource, String table) {
     ValueTableIndexManager valueTableIndexManager = new ValueTableIndexManager(getValuesIndexManager(), datasource, table);
-    return new ES1SearchQueryExecutor(this, valueTableIndexManager, getTermsFacetSizeLimit());
+    return new ESSearchQueryExecutor(this, valueTableIndexManager, getTermsFacetSizeLimit());
   }
 
   private int getTermsFacetSizeLimit() {
-    // TODO extract from properties
-    return termsFacetSizeLimit;
+    try {
+      return Integer.parseInt(properties.getProperty("termsFacetSizeLimit", "" + TERMS_FACETS_SIZE_LIMIT));
+    } catch (NumberFormatException e ) {
+      return TERMS_FACETS_SIZE_LIMIT;
+    }
   }
 
   private File getDataFolder() {

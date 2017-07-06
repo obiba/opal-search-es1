@@ -19,7 +19,7 @@ import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
-import org.obiba.es.opal.ES1SearchService;
+import org.obiba.es.opal.ESSearchService;
 import org.obiba.opal.search.support.EsResultConverter;
 import org.obiba.opal.search.support.QueryTermConverter;
 import org.obiba.opal.search.support.ValueTableIndexManager;
@@ -38,17 +38,17 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * This class is responsible for executing an elastic search. The input and output of this class are DTO format.
  */
-public class ES1SearchQueryExecutor implements SearchQueryExecutor {
+public class ESSearchQueryExecutor implements SearchQueryExecutor {
 
-  private static final Logger log = LoggerFactory.getLogger(ES1SearchQueryExecutor.class);
+  private static final Logger log = LoggerFactory.getLogger(ESSearchQueryExecutor.class);
 
-  private final ES1SearchService esProvider;
+  private final ESSearchService esProvider;
 
   private final int termsFacetSizeLimit;
 
   private final ValueTableIndexManager valueTableIndexManager;
 
-  public ES1SearchQueryExecutor(ES1SearchService esProvider, ValueTableIndexManager valueTableIndexManager, int termsFacetSizeLimit) {
+  public ESSearchQueryExecutor(ESSearchService esProvider, ValueTableIndexManager valueTableIndexManager, int termsFacetSizeLimit) {
     this.esProvider = esProvider;
     this.valueTableIndexManager = valueTableIndexManager;
     this.termsFacetSizeLimit = termsFacetSizeLimit;

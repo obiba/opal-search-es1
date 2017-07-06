@@ -16,7 +16,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.obiba.es.opal.mapping.AttributeMapping;
 import org.obiba.es.opal.mapping.ValueTableVariablesMapping;
-import org.obiba.es.opal.support.ES1IndexManager;
+import org.obiba.es.opal.support.ESIndexManager;
 import org.obiba.magma.*;
 import org.obiba.magma.support.VariableNature;
 import org.obiba.opal.spi.search.IndexSynchronization;
@@ -30,10 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ES1VariablesIndexManager extends ES1IndexManager implements VariablesIndexManager {
+public class ESVariablesIndexManager extends ESIndexManager implements VariablesIndexManager {
 
-  protected ES1VariablesIndexManager(ES1SearchService es1SearchService) {
-    super(es1SearchService);
+  protected ESVariablesIndexManager(ESSearchService esSearchService) {
+    super(esSearchService);
   }
 
 //  private static final Logger log = LoggerFactory.getLogger(EsVariablesIndexManager.class);
@@ -51,7 +51,7 @@ public class ES1VariablesIndexManager extends ES1IndexManager implements Variabl
 
   @Override
   public boolean isReady() {
-    return es1SearchService.isEnabled();
+    return esSearchService.isEnabled();
   }
 
   @NotNull
@@ -77,7 +77,7 @@ public class ES1VariablesIndexManager extends ES1IndexManager implements Variabl
 
     @Override
     protected void index() {
-      BulkRequestBuilder bulkRequest = es1SearchService.getClient().prepareBulk();
+      BulkRequestBuilder bulkRequest = esSearchService.getClient().prepareBulk();
 
       for(Variable variable : valueTable.getVariables()) {
         bulkRequest = indexVariable(variable, bulkRequest);
@@ -106,7 +106,7 @@ public class ES1VariablesIndexManager extends ES1IndexManager implements Variabl
           indexVariableCategories(variable, xcb);
         }
 
-        bulkRequest.add(es1SearchService.getClient().prepareIndex(getName(), index.getIndexType(), fullName)
+        bulkRequest.add(esSearchService.getClient().prepareIndex(getName(), index.getIndexType(), fullName)
             .setSource(xcb.endObject()));
         if(bulkRequest.numberOfActions() >= ES_BATCH_SIZE) {
           return sendAndCheck(bulkRequest);

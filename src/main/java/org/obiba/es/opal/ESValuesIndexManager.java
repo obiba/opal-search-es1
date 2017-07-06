@@ -16,7 +16,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.obiba.es.opal.mapping.ValueTableMapping;
-import org.obiba.es.opal.support.ES1IndexManager;
+import org.obiba.es.opal.support.ESIndexManager;
 import org.obiba.magma.Value;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
@@ -40,16 +40,16 @@ import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class ES1ValuesIndexManager extends ES1IndexManager implements ValuesIndexManager {
+public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexManager {
 
-  private static final Logger log = LoggerFactory.getLogger(ES1ValuesIndexManager.class);
+  private static final Logger log = LoggerFactory.getLogger(ESValuesIndexManager.class);
 
   private final ThreadFactory threadFactory;
 
   private final VariableSummaryHandler variableSummaryHandler;
 
-  protected ES1ValuesIndexManager(ES1SearchService es1SearchService, VariableSummaryHandler variableSummaryHandler, ThreadFactory threadFactory) {
-    super(es1SearchService);
+  protected ESValuesIndexManager(ESSearchService esSearchService, VariableSummaryHandler variableSummaryHandler, ThreadFactory threadFactory) {
+    super(esSearchService);
     this.variableSummaryHandler = variableSummaryHandler;
     this.threadFactory = threadFactory;
   }
@@ -100,7 +100,7 @@ public class ES1ValuesIndexManager extends ES1IndexManager implements ValuesInde
 
     private class ValuesReaderCallback implements ConcurrentReaderCallback {
 
-      private BulkRequestBuilder bulkRequest = es1SearchService.getClient().prepareBulk();
+      private BulkRequestBuilder bulkRequest = esSearchService.getClient().prepareBulk();
 
       private final Map<Variable, VariableNature> natures = new HashMap<>();
 
@@ -121,7 +121,7 @@ public class ES1ValuesIndexManager extends ES1IndexManager implements ValuesInde
         }
 
         String identifier = entity.getIdentifier();
-        bulkRequest.add(es1SearchService.getClient() //
+        bulkRequest.add(esSearchService.getClient() //
             .prepareIndex(getName(), valueTable.getEntityType(), identifier) //
             .setSource("{\"identifier\":\"" + identifier + "\"}"));
 
@@ -140,7 +140,7 @@ public class ES1ValuesIndexManager extends ES1IndexManager implements ValuesInde
           }
           builder.endObject();
 
-          IndexRequestBuilder requestBuilder = es1SearchService.getClient()
+          IndexRequestBuilder requestBuilder = esSearchService.getClient()
               .prepareIndex(getName(), index.getIndexType(), index.getIndexType() + "-" + identifier).setParent(identifier).setSource(builder);
           bulkRequest.add(requestBuilder);
           done++;

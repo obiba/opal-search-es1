@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for opal-search-es1
+# postinst script for opal-search-es
 #
 
 set -e
@@ -16,7 +16,7 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-NAME=opal-search-es1
+NAME=opal-search-es
 
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
@@ -28,11 +28,11 @@ case "$1" in
         mkdir -p $OPAL_HOME/plugins
         if [ -d "$OPAL_HOME"/plugins ]; then
 
-          OLD_PLUGIN=$(ls -t "$OPAL_HOME"/plugins/ | grep opal-search-es1 | head -1)
-          NEW_PLUGIN=$(ls -t /usr/share/opal-search-es1/ | grep opal-search-es1 | head -1 | sed s/\-dist\.zip//g)
+          OLD_PLUGIN=$(ls -t "$OPAL_HOME"/plugins/ | grep opal-search-es | head -1)
+          NEW_PLUGIN=$(ls -t /usr/share/opal-search-es/ | grep opal-search-es | head -1 | sed s/\-dist\.zip//g)
           NEW_PLUGIN_ZIP="$NEW_PLUGIN-dist.zip"
 
-          unzip /usr/share/opal-search-es1/$NEW_PLUGIN_ZIP -d $OPAL_HOME/plugins/
+          unzip /usr/share/opal-search-es/$NEW_PLUGIN_ZIP -d $OPAL_HOME/plugins/
           touch $OPAL_HOME/plugins/$NEW_PLUGIN
 
           if [ ! -z "$OLD_PLUGIN" ] && [ -f $OPAL_HOME/plugins/$OLD_PLUGIN/site.properties ]; then

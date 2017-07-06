@@ -20,7 +20,7 @@ import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
-import org.obiba.es.opal.ES1SearchService;
+import org.obiba.es.opal.ESSearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,19 +30,19 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ES1QueryExecutor {
+public class ESQueryExecutor {
 
-  private static final Logger log = LoggerFactory.getLogger(ES1QueryExecutor.class);
+  private static final Logger log = LoggerFactory.getLogger(ESQueryExecutor.class);
 
-  private final ES1SearchService elasticSearchProvider;
+  private final ESSearchService elasticSearchProvider;
 
   private String searchPath;
 
-  public ES1QueryExecutor(ES1SearchService elasticSearchProvider) {
+  public ESQueryExecutor(ESSearchService elasticSearchProvider) {
     this.elasticSearchProvider = elasticSearchProvider;
   }
 
-  public ES1QueryExecutor setSearchPath(String path) {
+  public ESQueryExecutor setSearchPath(String path) {
     searchPath = path;
     return this;
   }
