@@ -173,11 +173,6 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
     }
 
     @Override
-    public String getIndexName() {
-      return ESVariablesIndexManager.this.getName();
-    }
-
-    @Override
     protected XContentBuilder getMapping() {
       return new ValueTableVariablesMapping().createMapping(getIndexType());
     }

@@ -198,7 +198,7 @@ public abstract class ESIndexManager implements IndexManager {
     @NotNull
     @Override
     public String getIndexName() {
-      return (getName() + "-" + name).toLowerCase();
+      return getName();
     }
 
     @NotNull

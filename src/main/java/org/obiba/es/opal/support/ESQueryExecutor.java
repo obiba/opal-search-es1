@@ -36,14 +36,17 @@ public class ESQueryExecutor {
 
   public JSONObject execute(JSONObject jsonRequest) throws JSONException {
     if (log.isDebugEnabled()) log.debug("Request: " + searchPath + " => " + jsonRequest.toString(2));
+    String[] parts = searchPath.split("/");
     SearchRequestBuilder request = elasticSearchProvider.getClient().prepareSearch()
-        .setIndices(searchPath)
+        .setIndices(parts[0])
         .setQuery(jsonRequest.getString("query"))
         .setFrom(jsonRequest.getInt("from"))
         .setSize(jsonRequest.getInt("size"));
     // TODO sort
+    if (parts.length > 1) request.setTypes(parts[1]);
     if (jsonRequest.has("_source"))
       request.setSource(jsonRequest.getString("_source"));
+    log.debug("request /{} : {}", new String[] {searchPath, request.toString()});
     SearchResponse response = request.execute().actionGet();
     JSONObject jsonResponse = new JSONObject(response.toString());
     return jsonResponse;

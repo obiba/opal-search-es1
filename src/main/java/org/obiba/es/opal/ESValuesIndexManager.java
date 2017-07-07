@@ -127,7 +127,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
 
         try {
           XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
-          builder.field("identifier.analyzed", identifier); // analyzed copy of _id
+          //builder.field("identifier.analyzed", identifier); // analyzed copy of _id
           builder.field("identifier", identifier);
           builder.field("project", valueTable.getDatasource().getName());
           builder.field("datasource", valueTable.getDatasource().getName());
@@ -141,7 +141,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
           builder.endObject();
 
           IndexRequestBuilder requestBuilder = esSearchService.getClient()
-              .prepareIndex(getName(), index.getIndexType(), index.getIndexType() + "-" + identifier).setParent(identifier).setSource(builder);
+              .prepareIndex(getName(), index.getIndexType(), valueTable.getTableReference() + "-" + identifier).setParent(identifier).setSource(builder);
           bulkRequest.add(requestBuilder);
           done++;
 
@@ -236,7 +236,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
 
     @Override
     public String getFieldName(String variable) {
-      return (getIndexType() + FIELD_SEP + variable).replace(' ','+');
+      return (getValueTableReference() + FIELD_SEP + variable).replace(' ','+').replace('.','_');
     }
 
     @Override
@@ -252,5 +252,9 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
           .collect(Collectors.toList());
     }
 
+    @Override
+    public void delete() {
+      // TODO
+    }
   }
 }

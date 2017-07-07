@@ -56,12 +56,17 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
     SearchRequestBuilder request = esProvider.getClient().prepareSearch()
         .setIndices(valueTableValuesIndex.getIndexName())
         .setTypes(valueTableValuesIndex.getIndexType())
-        .setQuery(jsonRequest.getString("query"))
-        .setFrom(jsonRequest.getInt("from"))
+        .setQuery(jsonRequest.getString("query"));
+    if (jsonRequest.has("aggregations")) {
+      request.setAggregations(jsonRequest.getJSONObject("aggregations").toString().getBytes());
+    }
+    if (jsonRequest.has("from"))
+        request.setFrom(jsonRequest.getInt("from"))
         .setSize(jsonRequest.getInt("size"));
     // TODO sort
     if (jsonRequest.has("_source"))
         request.setSource(jsonRequest.getString("_source"));
+    log.debug("request /{}/{} : {}", new String[] {valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString()});
     SearchResponse response = request.execute().actionGet();
     JSONObject jsonContent = new JSONObject(response.toString());
     EsResultConverter converter = new EsResultConverter();
