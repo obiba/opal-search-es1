@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class MappingHelper {
 
-  private static final String ANALYZED_FIELD_POSTFIX = ".analyzed";
+  private static final String ANALYZED_FIELD_POSTFIX = "analyzed";
 
   public static void mapNotAnalyzedString(String field, XContentBuilder mapping) throws IOException {
     mapping.startObject(field);
@@ -39,7 +39,7 @@ public class MappingHelper {
     Map<String, String> analyzed = new HashMap<>();
     analyzed.put("type", "string");
     analyzed.put("index", "analyzed");
-    analyzed.put("index_analyzer", "opal_index_analyzer");
+    analyzed.put("analyzer", "opal_index_analyzer");
     analyzed.put("search_analyzer", "opal_search_analyzer");
 
     Map<String, String> notAnalyzed = new HashMap<>();
@@ -47,7 +47,7 @@ public class MappingHelper {
     notAnalyzed.put("index", "not_analyzed");
 
     Map<String, Map<String, String>> fields = new HashMap<>();
-    fields.put(field + ANALYZED_FIELD_POSTFIX, analyzed);
+    fields.put(ANALYZED_FIELD_POSTFIX, analyzed);
     fields.put(field, notAnalyzed);
 
     return fields;

@@ -57,18 +57,18 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
   @NotNull
   @Override
   public ValueTableValuesIndex getIndex(@NotNull ValueTable vt) {
-    return (ES1ValueTableValuesIndex) super.getIndex(vt);
+    return (ESValueTableValuesIndex) super.getIndex(vt);
   }
 
   @Override
   protected ValueTableIndex createIndex(@NotNull ValueTable vt) {
-    return new ES1ValueTableValuesIndex(vt);
+    return new ESValueTableValuesIndex(vt);
   }
 
   @NotNull
   @Override
   public IndexSynchronization createSyncTask(ValueTable valueTable, ValueTableIndex index) {
-    return new Indexer(valueTable, (ES1ValueTableValuesIndex) index);
+    return new Indexer(valueTable, (ESValueTableValuesIndex) index);
   }
 
   @NotNull
@@ -77,11 +77,11 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
     return esIndexName() + "-values";
   }
 
-  private class Indexer extends ES1Indexer {
+  private class Indexer extends ESIndexer {
 
-    private final ES1ValueTableValuesIndex index;
+    private final ESValueTableValuesIndex index;
 
-    private Indexer(ValueTable table, ES1ValueTableValuesIndex index) {
+    private Indexer(ValueTable table, ESValueTableValuesIndex index) {
       super(table, index);
       this.index = index;
     }
@@ -223,10 +223,15 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
 
   }
 
-  private class ES1ValueTableValuesIndex extends ES1ValueTableIndex implements ValueTableValuesIndex {
+  private class ESValueTableValuesIndex extends ESValueTableIndex implements ValueTableValuesIndex {
 
-    private ES1ValueTableValuesIndex(ValueTable vt) {
+    private ESValueTableValuesIndex(ValueTable vt) {
       super(vt);
+    }
+
+    @Override
+    public String getIndexType() {
+      return "valueSet";
     }
 
     @Override

@@ -37,6 +37,6 @@ public class AttributeMapping {
     if(attribute.isLocalised()) {
       field += "-" + attribute.getLocale();
     }
-    return field.replace(' ','+');
+    return field.replace(' ','+').replace('.','_');
   }
 }

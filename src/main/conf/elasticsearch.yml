@@ -1,18 +1,21 @@
 http.enabled: false
 discovery.zen.ping.multicast.enabled: false
 index:
+    max_result_window: 1000000
     analysis:
         analyzer:
             opal_index_analyzer:
                type: custom
+               char_filter: [html_strip]
                tokenizer: standard
-               filter: [standard,lowercase,opal_filter]
+               filter: [standard,lowercase,opal_nGram_filter]
             opal_search_analyzer:
                type: custom
+               char_filter: [html_strip]
                tokenizer: standard
                filter: [standard,lowercase]
         filter:
-            opal_filter:
+            opal_nGram_filter:
                 type: nGram
                 min_gram: 2
-                max_gram: 30
+                max_gram: 20

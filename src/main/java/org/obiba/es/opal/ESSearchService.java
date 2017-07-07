@@ -13,10 +13,9 @@ package org.obiba.es.opal;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
-import org.elasticsearch.node.internal.InternalNode;
 import org.elasticsearch.rest.RestController;
 import org.obiba.es.opal.support.ESQueryExecutor;
 import org.obiba.es.opal.support.ESSearchQueryExecutor;
@@ -25,7 +24,6 @@ import org.obiba.opal.spi.search.*;
 import org.obiba.opal.web.model.Search;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
 
@@ -99,18 +97,14 @@ public class ESSearchService implements SearchService {
     // do init stuff
     if (settings != null) {
       File pluginWorkDir = new File(getWorkFolder(), ES_BRANCH);
-      ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder() //
+      Settings.Builder builder = Settings.settingsBuilder() //
+          .put("path.home", getInstallFolder().getAbsolutePath()) //
           .put("path.data", new File(pluginWorkDir, "data").getAbsolutePath()) //
           .put("path.work", new File(pluginWorkDir, "work").getAbsolutePath());
 
       File defaultSettings = new File(getInstallFolder(), "elasticsearch.yml");
-      if (defaultSettings.exists()) {
-        try {
-          builder.loadFromUrl(defaultSettings.toURI().toURL());
-        } catch (MalformedURLException e) {
-          e.printStackTrace();
-        }
-      }
+      if (defaultSettings.exists())
+        builder.loadFromPath(defaultSettings.toPath());
 
       builder.loadFromSource(settings.getEsSettings());
 
@@ -159,7 +153,7 @@ public class ESSearchService implements SearchService {
   @Override
   public JSONObject executeQuery(JSONObject jsonQuery, String searchPath) throws JSONException {
     ESQueryExecutor executor = new ESQueryExecutor(this).setSearchPath(searchPath);
-    return executor.executePost(jsonQuery);
+    return executor.execute(jsonQuery);
   }
 
   @Override
@@ -181,7 +175,7 @@ public class ESSearchService implements SearchService {
   }
 
   public RestController newRestController() {
-    return ((InternalNode) esNode).injector().getInstance(RestController.class);
+    return esNode.injector().getInstance(RestController.class);
   }
 
   //

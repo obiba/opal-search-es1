@@ -40,13 +40,13 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
 
   @NotNull
   @Override
-  public ES1ValueTableVariablesIndex getIndex(@NotNull ValueTable vt) {
-    return (ES1ValueTableVariablesIndex) super.getIndex(vt);
+  public ESValueTableVariablesIndex getIndex(@NotNull ValueTable vt) {
+    return (ESValueTableVariablesIndex) super.getIndex(vt);
   }
 
   @Override
   protected ValueTableIndex createIndex(@NotNull ValueTable vt) {
-    return new ES1ValueTableVariablesIndex(vt);
+    return new ESValueTableVariablesIndex(vt);
   }
 
   @Override
@@ -57,7 +57,7 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
   @NotNull
   @Override
   public IndexSynchronization createSyncTask(ValueTable valueTable, ValueTableIndex index) {
-    return new Indexer(valueTable, (ES1ValueTableVariablesIndex) index);
+    return new Indexer(valueTable, (ESValueTableVariablesIndex) index);
   }
 
   @NotNull
@@ -66,11 +66,11 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
     return esIndexName() + "-variables";
   }
 
-  private class Indexer extends ES1Indexer {
+  private class Indexer extends ESIndexer {
 
-    private final ES1ValueTableVariablesIndex index;
+    private final ESValueTableVariablesIndex index;
 
-    private Indexer(ValueTable table, ES1ValueTableVariablesIndex index) {
+    private Indexer(ValueTable table, ESValueTableVariablesIndex index) {
       super(table, index);
       this.index = index;
     }
@@ -106,7 +106,7 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
           indexVariableCategories(variable, xcb);
         }
 
-        bulkRequest.add(esSearchService.getClient().prepareIndex(getName(), index.getIndexType(), fullName)
+        bulkRequest.add(esSearchService.getClient().prepareIndex(index.getIndexName(), index.getIndexType(), fullName)
             .setSource(xcb.endObject()));
         if(bulkRequest.numberOfActions() >= ES_BATCH_SIZE) {
           return sendAndCheck(bulkRequest);
@@ -161,15 +161,25 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
     }
   }
 
-  private class ES1ValueTableVariablesIndex extends ES1ValueTableIndex implements ValueTableVariablesIndex {
+  private class ESValueTableVariablesIndex extends ESValueTableIndex implements ValueTableVariablesIndex {
 
-    private ES1ValueTableVariablesIndex(ValueTable vt) {
+    private ESValueTableVariablesIndex(ValueTable vt) {
       super(vt);
     }
 
     @Override
+    public String getIndexType() {
+      return "variable";
+    }
+
+    @Override
+    public String getIndexName() {
+      return ESVariablesIndexManager.this.getName();
+    }
+
+    @Override
     protected XContentBuilder getMapping() {
-      return new ValueTableVariablesMapping().createMapping(getIndexType(), resolveTable());
+      return new ValueTableVariablesMapping().createMapping(getIndexType());
     }
 
     @NotNull
@@ -178,5 +188,9 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
       return AttributeMapping.getFieldName(attribute);
     }
 
+    @Override
+    public void delete() {
+      // TODO remove table's variables
+    }
   }
 }

@@ -23,13 +23,10 @@ import java.util.Date;
 
 public class ValueTableVariablesMapping {
 
-
   private final ValueTypeMappings valueTypeMappings = new ValueTypeMappings();
 
-  private final AttributeMapping attributeMapping = new AttributeMapping();
-
   @SuppressWarnings({ "OverlyLongMethod", "PMD.NcssMethodCount" })
-  public XContentBuilder createMapping(String name, ValueTable valueTable) {
+  public XContentBuilder createMapping(String name) {
     try {
       XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(name);
 
@@ -55,36 +52,11 @@ public class ValueTableVariablesMapping {
       valueTypeMappings.forType(BooleanType.get()).map(mapping);
       mapping.endObject();
 
-      for(Variable variable : valueTable.getVariables()) {
-        if(variable.hasAttributes()) {
-          for(Attribute attribute : variable.getAttributes()) {
-//            Different analyzer for label and label-en
-            if(!"label".equals(attribute.getName())) {
-              attributeMapping.map(attribute, mapping);
-            }
-          }
-        }
-      }
       mapping.endObject(); // properties
 
       mapping.startObject("_meta") //
           .field("_created", DateTimeType.get().valueOf(new Date()).toString()) //
-          .field("_reference", valueTable.getDatasource().getName() + "." + valueTable.getName()) //
           .endObject();
-
-      mapping.endObject() // type
-          .endObject(); // mapping
-      return mapping;
-    } catch(IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public XContentBuilder updateTimestamps(String name) {
-    try {
-      XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(name);
-
-      mapping.startObject("_meta").field("_updated", DateTimeType.get().valueOf(new Date()).toString()).endObject();
 
       mapping.endObject() // type
           .endObject(); // mapping

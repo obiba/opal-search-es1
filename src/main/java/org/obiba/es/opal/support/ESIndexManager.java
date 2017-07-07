@@ -10,6 +10,7 @@
 package org.obiba.es.opal.support;
 
 import com.google.common.collect.Maps;
+import org.apache.lucene.index.IndexNotFoundException;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -18,10 +19,8 @@ import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.indices.TypeMissingException;
 import org.obiba.es.opal.ESSearchService;
 import org.obiba.magma.Timestamps;
@@ -67,9 +66,9 @@ public abstract class ESIndexManager implements IndexManager {
   @Override
   public boolean hasIndex(@NotNull ValueTable valueTable) {
     ClusterStateResponse resp = esSearchService.getClient().admin().cluster().prepareState().execute().actionGet();
-    ImmutableOpenMap<String, MappingMetaData> mappings = resp.getState().metaData().index(getName()).mappings();
-    return mappings.containsKey(getIndex(valueTable).getIndexType());
-
+    ValueTableIndex valueTableIndex = getIndex(valueTable);
+    ImmutableOpenMap<String, MappingMetaData> mappings = resp.getState().metaData().index(valueTableIndex.getIndexName()).getMappings();
+    return mappings.containsKey(valueTableIndex.getIndexType());
   }
 
   protected abstract ValueTableIndex createIndex(@NotNull ValueTable vt);
@@ -94,29 +93,18 @@ public abstract class ESIndexManager implements IndexManager {
   }
 
   protected Settings getIndexSettings() {
-    return ImmutableSettings.settingsBuilder() //
+    return Settings.settingsBuilder() //
         .put("number_of_shards", esSearchService.getConfig().getShards()) //
         .put("number_of_replicas", esSearchService.getConfig().getReplicas()).build();
   }
 
-  @NotNull
-  protected IndexMetaData createIndex() {
-    IndicesAdminClient idxAdmin = esSearchService.getClient().admin().indices();
-    if(!idxAdmin.exists(new IndicesExistsRequest(getName())).actionGet().isExists()) {
-      log.info("Creating index [{}]", getName());
-      idxAdmin.prepareCreate(getName()).setSettings(getIndexSettings()).execute().actionGet();
-    }
-    return esSearchService.getClient().admin().cluster().prepareState().setIndices(getName()).execute().actionGet()
-        .getState().getMetaData().index(getName());
-  }
-
-  protected abstract class ES1Indexer implements IndexSynchronization {
+  protected abstract class ESIndexer implements IndexSynchronization {
 
     @NotNull
     protected final ValueTable valueTable;
 
     @NotNull
-    private final ES1ValueTableIndex index;
+    private final ESValueTableIndex index;
 
     private final int total;
 
@@ -124,7 +112,7 @@ public abstract class ESIndexManager implements IndexManager {
 
     protected boolean stop = false;
 
-    protected ES1Indexer(@NotNull ValueTable table, @NotNull ES1ValueTableIndex index) {
+    protected ESIndexer(@NotNull ValueTable table, @NotNull ESValueTableIndex index) {
       valueTable = table;
       this.index = index;
       total = valueTable.getVariableEntityCount();
@@ -139,8 +127,8 @@ public abstract class ESIndexManager implements IndexManager {
     public void run() {
       log.debug("Updating ValueTable index {}", index.getValueTableReference());
       index.delete();
-      createIndex();
-      index.createMapping();
+      index.createIndex();
+      //index.createMapping();
       index();
     }
 
@@ -190,7 +178,7 @@ public abstract class ESIndexManager implements IndexManager {
     }
   }
 
-  protected abstract class ES1ValueTableIndex implements ValueTableIndex {
+  protected abstract class ESValueTableIndex implements ValueTableIndex {
 
     @NotNull
     private final String name;
@@ -198,26 +186,19 @@ public abstract class ESIndexManager implements IndexManager {
     @NotNull
     private final String valueTableReference;
 
-    private boolean mappingCreated;
 
     /**
      * @param vt
      */
-    protected ES1ValueTableIndex(@NotNull ValueTable vt) {
+    protected ESValueTableIndex(@NotNull ValueTable vt) {
       name = indexName(vt);
       valueTableReference = vt.getTableReference();
     }
 
     @NotNull
     @Override
-    public String getIndexType() {
-      return name;
-    }
-
-    @NotNull
-    @Override
     public String getIndexName() {
-      return getName();
+      return (getName() + "-" + name).toLowerCase();
     }
 
     @NotNull
@@ -229,8 +210,8 @@ public abstract class ESIndexManager implements IndexManager {
       try {
         ESMapping mapping = readMapping();
         //noinspection ConstantConditions
-        mapping.meta().setString("_updated", DateTimeType.get().valueOf(new Date()).toString());
-        esSearchService.getClient().admin().indices().preparePutMapping(getName()).setType(getIndexType())
+        mapping.meta().setString(name, DateTimeType.get().valueOf(new Date()).toString());
+        esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
             .setSource(mapping.toXContent()).execute().actionGet();
       } catch(IOException e) {
         throw new RuntimeException(e);
@@ -241,21 +222,27 @@ public abstract class ESIndexManager implements IndexManager {
     public void delete() {
       if(esSearchService.isEnabled() && esSearchService.isRunning()) {
         try {
-          esSearchService.getClient().admin().indices().prepareDeleteMapping(getName()).setType(getIndexType())
-              .execute().actionGet();
-        } catch(TypeMissingException | IndexMissingException ignored) {
-        } finally {
-          mappingCreated = false;
+          esSearchService.getClient().admin().indices().prepareDelete(getIndexName()).execute().actionGet();
+        } catch(TypeMissingException ignored) {
         }
       }
     }
 
-    protected void createMapping() {
-      if(mappingCreated) return;
-      getIndexMetaData(); // create index if it does not exist yet
-      esSearchService.getClient().admin().indices().preparePutMapping(getName()).setType(getIndexType())
+    @NotNull
+    IndexMetaData createIndex() {
+      IndicesAdminClient idxAdmin = esSearchService.getClient().admin().indices();
+      if(!idxAdmin.exists(new IndicesExistsRequest(getIndexName())).actionGet().isExists()) {
+        log.info("Creating index [{}]", getIndexName());
+        idxAdmin.prepareCreate(getIndexName()).setSettings(getIndexSettings()).execute().actionGet();
+        createMapping();
+      }
+      return esSearchService.getClient().admin().cluster().prepareState().setIndices(getIndexName()).execute().actionGet()
+          .getState().getMetaData().index(getIndexName());
+    }
+
+    private void createMapping() {
+      esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
           .setSource(getMapping()).execute().actionGet();
-      mappingCreated = true;
     }
 
     protected abstract XContentBuilder getMapping();
@@ -278,7 +265,7 @@ public abstract class ESIndexManager implements IndexManager {
         @NotNull
         @Override
         public Value getLastUpdate() {
-          return DateTimeType.get().valueOf(meta.getString("_updated"));
+          return DateTimeType.get().valueOf(meta.getString(name));
         }
 
         @NotNull
@@ -291,7 +278,7 @@ public abstract class ESIndexManager implements IndexManager {
     }
 
     @NotNull
-    private String indexName(@NotNull ValueTable table) {
+    protected String indexName(@NotNull ValueTable table) {
       String datasourceName = table.getDatasource().getName().replace(' ', '+').replace('.', '-');
       String tableName = table.getName().replace(' ', '_').replace('.', '-');
       return datasourceName + "__" + tableName;
@@ -302,7 +289,6 @@ public abstract class ESIndexManager implements IndexManager {
       try {
         try {
           IndexMetaData indexMetaData = getIndexMetaData();
-
           if(indexMetaData != null) {
             MappingMetaData metaData = indexMetaData.mapping(getIndexType());
             if(metaData != null) {
@@ -310,11 +296,8 @@ public abstract class ESIndexManager implements IndexManager {
               return new ESMapping(getIndexType(), mappingSource);
             }
           }
-
-          mappingCreated = false;
           return new ESMapping(getIndexType());
-        } catch(IndexMissingException e) {
-          mappingCreated = false;
+        } catch(IndexNotFoundException e) {
           return new ESMapping(getIndexType());
         }
       } catch(IOException e) {
@@ -330,8 +313,8 @@ public abstract class ESIndexManager implements IndexManager {
     private IndexMetaData getIndexMetaData() {
       if(esSearchService.getClient() == null) return null;
 
-      IndexMetaData imd = esSearchService.getClient().admin().cluster().prepareState().setIndices(getName()).execute()
-          .actionGet().getState().getMetaData().index(getName());
+      IndexMetaData imd = esSearchService.getClient().admin().cluster().prepareState().setIndices(getIndexName()).execute()
+          .actionGet().getState().getMetaData().index(getIndexName());
       return imd == null ? createIndex() : imd;
     }
 
@@ -351,7 +334,7 @@ public abstract class ESIndexManager implements IndexManager {
     @Override
     public boolean equals(Object obj) {
       return obj != null && (obj == this ||
-          obj instanceof ES1ValueTableIndex && ((ValueTableIndex) obj).getIndexType().equals(getIndexType()));
+          obj instanceof ESValueTableIndex && ((ValueTableIndex) obj).getIndexType().equals(getIndexType()));
     }
 
   }
