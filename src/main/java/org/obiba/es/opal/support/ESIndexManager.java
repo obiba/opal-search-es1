@@ -15,13 +15,18 @@ import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.indices.TypeMissingException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.obiba.es.opal.ESSearchService;
 import org.obiba.magma.Timestamps;
 import org.obiba.magma.Value;
@@ -41,6 +46,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public abstract class ESIndexManager implements IndexManager {
 
@@ -133,9 +139,9 @@ public abstract class ESIndexManager implements IndexManager {
     }
 
     protected BulkRequestBuilder sendAndCheck(BulkRequestBuilder bulkRequest) {
-      if(bulkRequest.numberOfActions() > 0) {
+      if (bulkRequest.numberOfActions() > 0) {
         BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-        if(bulkResponse.hasFailures()) {
+        if (bulkResponse.hasFailures()) {
           // process failures by iterating through each bulk response item
           throw new RuntimeException(bulkResponse.buildFailureMessage());
         }
@@ -180,12 +186,13 @@ public abstract class ESIndexManager implements IndexManager {
 
   protected abstract class ESValueTableIndex implements ValueTableIndex {
 
+    protected static final int MAX_SIZE = 10000;
+
     @NotNull
     private final String name;
 
     @NotNull
     private final String valueTableReference;
-
 
     /**
      * @param vt
@@ -213,25 +220,68 @@ public abstract class ESIndexManager implements IndexManager {
         mapping.meta().setString(name, DateTimeType.get().valueOf(new Date()).toString());
         esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
             .setSource(mapping.toXContent()).execute().actionGet();
-      } catch(IOException e) {
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private void deleteTimestamps() {
+      try {
+        ESMapping mapping = readMapping();
+        if (mapping.meta().hasString(name)) {
+          mapping.meta().deleteString(name);
+          esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
+              .setSource(mapping.toXContent()).execute().actionGet();
+        }
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
 
     @Override
     public void delete() {
-      if(esSearchService.isEnabled() && esSearchService.isRunning()) {
-        try {
-          esSearchService.getClient().admin().indices().prepareDelete(getIndexName()).execute().actionGet();
-        } catch(TypeMissingException ignored) {
+      if (!esSearchService.isEnabled() || !esSearchService.isRunning()) return;
+      BulkRequestBuilder bulkRequest = esSearchService.getClient().prepareBulk();
+      // TODO remove table's items
+
+      long total = MAX_SIZE;
+      int from = 0;
+      while (from < total) {
+        QueryBuilder query = QueryBuilders.termQuery("reference", getValueTableReference());
+        SearchRequestBuilder search = esSearchService.getClient().prepareSearch() //
+            .setIndices(getIndexName()) //
+            .setTypes(getIndexType()) //
+            .setQuery(query) //
+            .setFrom(from) //
+            .setSize(MAX_SIZE) //
+            .setNoFields();
+
+        SearchResponse response = search.execute().actionGet();
+        total = response.getHits().getTotalHits();
+        for (SearchHit hit : response.getHits()) {
+          DeleteRequestBuilder request = esSearchService.getClient().prepareDelete(getIndexName(), getIndexType(), hit.getId());
+          if (hit.getFields() != null && hit.getFields().containsKey("_parent")) {
+            String parent = hit.field("_parent").value();
+            request.setParent(parent);
+          }
+          bulkRequest.add(request);
         }
+        from = from + MAX_SIZE;
       }
+
+      try {
+        bulkRequest.execute().get();
+      } catch (InterruptedException | ExecutionException e) {
+        //
+      }
+
+      deleteTimestamps();
     }
 
     @NotNull
     IndexMetaData createIndex() {
       IndicesAdminClient idxAdmin = esSearchService.getClient().admin().indices();
-      if(!idxAdmin.exists(new IndicesExistsRequest(getIndexName())).actionGet().isExists()) {
+      if (!idxAdmin.exists(new IndicesExistsRequest(getIndexName())).actionGet().isExists()) {
         log.info("Creating index [{}]", getIndexName());
         idxAdmin.prepareCreate(getIndexName()).setSettings(getIndexSettings()).execute().actionGet();
         createMapping();
@@ -289,18 +339,18 @@ public abstract class ESIndexManager implements IndexManager {
       try {
         try {
           IndexMetaData indexMetaData = getIndexMetaData();
-          if(indexMetaData != null) {
+          if (indexMetaData != null) {
             MappingMetaData metaData = indexMetaData.mapping(getIndexType());
-            if(metaData != null) {
+            if (metaData != null) {
               byte[] mappingSource = metaData.source().uncompressed();
               return new ESMapping(getIndexType(), mappingSource);
             }
           }
           return new ESMapping(getIndexType());
-        } catch(IndexNotFoundException e) {
+        } catch (IndexNotFoundException e) {
           return new ESMapping(getIndexType());
         }
-      } catch(IOException e) {
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -311,7 +361,7 @@ public abstract class ESIndexManager implements IndexManager {
 
     @Nullable
     private IndexMetaData getIndexMetaData() {
-      if(esSearchService.getClient() == null) return null;
+      if (esSearchService.getClient() == null) return null;
 
       IndexMetaData imd = esSearchService.getClient().admin().cluster().prepareState().setIndices(getIndexName()).execute()
           .actionGet().getState().getMetaData().index(getIndexName());

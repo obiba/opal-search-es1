@@ -12,8 +12,14 @@ package org.obiba.es.opal;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.obiba.es.opal.mapping.AttributeMapping;
 import org.obiba.es.opal.mapping.ValueTableVariablesMapping;
 import org.obiba.es.opal.support.ESIndexManager;
@@ -29,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class ESVariablesIndexManager extends ESIndexManager implements VariablesIndexManager {
 
@@ -181,11 +188,6 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
     @Override
     public String getFieldName(@NotNull Attribute attribute) {
       return AttributeMapping.getFieldName(attribute);
-    }
-
-    @Override
-    public void delete() {
-      // TODO remove table's variables
     }
   }
 }

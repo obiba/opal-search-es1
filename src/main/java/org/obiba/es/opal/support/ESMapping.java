@@ -52,12 +52,21 @@ class ESMapping {
   @SuppressWarnings("ParameterHidesMemberVariable")
   class Meta {
 
+    public boolean hasString(String name) {
+      return meta().containsKey(name);
+    }
+
     public String getString(String name) {
       return (String) meta().get(name);
     }
 
     public Meta setString(String name, String value) {
       meta().put(name, value);
+      return this;
+    }
+
+    public Meta deleteString(String name) {
+      meta().remove(name);
       return this;
     }
 

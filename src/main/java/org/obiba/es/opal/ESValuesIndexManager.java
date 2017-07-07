@@ -251,10 +251,5 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
           .filter(variable -> !variable.getValueType().isGeo() && !BinaryType.get().equals(variable.getValueType()))
           .collect(Collectors.toList());
     }
-
-    @Override
-    public void delete() {
-      // TODO
-    }
   }
 }
