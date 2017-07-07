@@ -31,7 +31,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class ESSearchService implements SearchService {
 
-  private static final String ES_BRANCH = "1.x";
+  private static final String ES_BRANCH = "2.x";
 
   private static final int TERMS_FACETS_SIZE_LIMIT = 200;
 
