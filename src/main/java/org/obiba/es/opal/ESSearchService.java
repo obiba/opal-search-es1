@@ -31,6 +31,8 @@ import java.util.concurrent.ThreadFactory;
 
 public class ESSearchService implements SearchService {
 
+  private static final String ES_BRANCH = "1.x";
+
   private static final int TERMS_FACETS_SIZE_LIMIT = 200;
 
   private Properties properties;
@@ -96,9 +98,10 @@ public class ESSearchService implements SearchService {
   public void start() {
     // do init stuff
     if (settings != null) {
+      File pluginWorkDir = new File(getWorkFolder(), ES_BRANCH);
       ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder() //
-          .put("path.data", getDataFolder().getAbsolutePath()) //
-          .put("path.work", getWorkFolder().getAbsolutePath());
+          .put("path.data", new File(pluginWorkDir, "data").getAbsolutePath()) //
+          .put("path.work", new File(pluginWorkDir, "work").getAbsolutePath());
 
       File defaultSettings = new File(getInstallFolder(), "elasticsearch.yml");
       if (defaultSettings.exists()) {
