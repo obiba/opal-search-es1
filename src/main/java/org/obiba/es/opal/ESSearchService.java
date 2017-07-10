@@ -10,16 +10,19 @@
 
 package org.obiba.es.opal;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
-import org.elasticsearch.rest.RestController;
 import org.obiba.es.opal.support.ESQueryExecutor;
 import org.obiba.es.opal.support.ESSearchQueryExecutor;
-import org.obiba.opal.search.support.ValueTableIndexManager;
+import org.obiba.es.opal.support.JsonSearchQueryBuilder;
+import org.obiba.es.opal.support.QueryResultConverter;
+import org.obiba.opal.spi.search.support.ItemResultDtoStrategy;
+import org.obiba.opal.spi.search.support.ValueTableIndexManager;
 import org.obiba.opal.spi.search.*;
 import org.obiba.opal.web.model.Search;
 
@@ -150,19 +153,75 @@ public class ESSearchService implements SearchService {
   // Search methods
   //
 
+
   @Override
-  public JSONObject executeQuery(JSONObject jsonQuery, String searchPath) throws JSONException {
-    ESQueryExecutor executor = new ESQueryExecutor(this).setSearchPath(searchPath);
-    return executor.execute(jsonQuery);
+  public void executeIdentifiersQuery(QuerySettings querySettings, String searchPath, HitsQueryCallback<String> callback) throws SearchException {
+    JSONObject jsonResponse = executeQuery(querySettings, searchPath);
+    if (jsonResponse.isNull("error")) {
+      try {
+        JSONObject jsonHits = jsonResponse.getJSONObject("hits");
+        callback.onTotal(jsonHits.getInt("total"));
+        JSONArray hits = jsonHits.getJSONArray("hits");
+        for (int i = 0; i < hits.length(); i++) {
+          JSONObject jsonHit = hits.getJSONObject(i);
+          if (jsonHit.has("_source")) {
+            callback.onIdentifier(jsonHit.getJSONObject("_source").getString("identifier"));
+          }
+        }
+      } catch (JSONException e) {
+        throw new SearchException(e.getMessage(), e);
+      }
+    } else callback.onTotal(0);
   }
 
   @Override
-  public Search.QueryResultDto executeQuery(String datasource, String table, Search.QueryTermDto queryDto) throws JSONException {
+  public Search.QueryResultDto executeQuery(QuerySettings querySettings, String searchPath, ItemResultDtoStrategy strategy) throws SearchException {
+    JSONObject jsonResponse = executeQuery(querySettings, searchPath);
+    QueryResultConverter converter = new QueryResultConverter();
+    if (strategy != null) converter.setStrategy(strategy);
+    try {
+      return converter.convert(jsonResponse);
+    } catch (JSONException e) {
+      throw new SearchException(e.getMessage(), e);
+    }
+  }
+
+  public Search.EntitiesResultDto.Builder executeEntitiesQuery(QuerySettings querySettings, String searchPath, String entityType, String query) throws SearchException {
+    JSONObject jsonResponse = executeQuery(querySettings, searchPath);
+    Search.EntitiesResultDto.Builder builder = Search.EntitiesResultDto.newBuilder();
+    builder.setEntityType(entityType);
+    try {
+      if (jsonResponse.has("hits")) {
+        JSONObject jsonHits = jsonResponse.getJSONObject("hits");
+        builder.setTotalHits(jsonHits.getInt("total"));
+        builder.setQuery(query);
+
+        JSONArray hits = jsonHits.getJSONArray("hits");
+        if (hits.length() > 0) {
+          for (int i = 0; i < hits.length(); i++) {
+            Search.ItemResultDto.Builder dtoItemResultBuilder = Search.ItemResultDto.newBuilder();
+            JSONObject jsonHit = hits.getJSONObject(i);
+            dtoItemResultBuilder.setIdentifier(jsonHit.getString("_id"));
+            builder.addHits(dtoItemResultBuilder);
+          }
+        }
+      } else {
+        builder.setTotalHits(0);
+        builder.setQuery(query);
+      }
+      return builder;
+    } catch (JSONException e) {
+      throw new SearchException(e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public Search.QueryResultDto executeQuery(String datasource, String table, Search.QueryTermDto queryDto) throws SearchException {
     return createQueryExecutor(datasource, table).execute(queryDto);
   }
 
   @Override
-  public Search.QueryResultDto executeQuery(String datasource, String table, Search.QueryTermsDto queryDto) throws JSONException {
+  public Search.QueryResultDto executeQuery(String datasource, String table, Search.QueryTermsDto queryDto) throws SearchException {
     return createQueryExecutor(datasource, table).execute(queryDto);
   }
 
@@ -174,14 +233,18 @@ public class ESSearchService implements SearchService {
     return client;
   }
 
-  public RestController newRestController() {
-    return esNode.injector().getInstance(RestController.class);
-  }
-
   //
   // Private methods
   //
 
+  private JSONObject executeQuery(QuerySettings querySettings, String searchPath) throws SearchException {
+    ESQueryExecutor executor = new ESQueryExecutor(this).setSearchPath(searchPath);
+    try {
+      return executor.execute(JsonSearchQueryBuilder.newSearchQuery(querySettings).build());
+    } catch (JSONException e) {
+      throw new SearchException(e.getMessage(), e);
+    }
+  }
 
   private SearchQueryExecutor createQueryExecutor(String datasource, String table) {
     ValueTableIndexManager valueTableIndexManager = new ValueTableIndexManager(getValuesIndexManager(), datasource, table);
@@ -191,7 +254,7 @@ public class ESSearchService implements SearchService {
   private int getTermsFacetSizeLimit() {
     try {
       return Integer.parseInt(properties.getProperty("termsFacetSizeLimit", "" + TERMS_FACETS_SIZE_LIMIT));
-    } catch (NumberFormatException e ) {
+    } catch (NumberFormatException e) {
       return TERMS_FACETS_SIZE_LIMIT;
     }
   }

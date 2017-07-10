@@ -14,9 +14,8 @@ import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.obiba.es.opal.ESSearchService;
-import org.obiba.opal.search.support.EsResultConverter;
-import org.obiba.opal.search.support.QueryTermConverter;
-import org.obiba.opal.search.support.ValueTableIndexManager;
+import org.obiba.opal.spi.search.support.ValueTableIndexManager;
+import org.obiba.opal.spi.search.SearchException;
 import org.obiba.opal.spi.search.SearchQueryExecutor;
 import org.obiba.opal.spi.search.ValueTableValuesIndex;
 import org.obiba.opal.web.model.Search;
@@ -50,27 +49,31 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
    * @throws JSONException
    */
   @Override
-  public Search.QueryResultDto execute(Search.QueryTermsDto dtoQueries) throws JSONException {
-    JSONObject jsonRequest = new JSONObject(build(dtoQueries, valueTableIndexManager));
-    ValueTableValuesIndex valueTableValuesIndex = valueTableIndexManager.getValueTableValuesIndex();
-    SearchRequestBuilder request = esProvider.getClient().prepareSearch()
-        .setIndices(valueTableValuesIndex.getIndexName())
-        .setTypes(valueTableValuesIndex.getIndexType())
-        .setQuery(jsonRequest.getString("query"));
-    if (jsonRequest.has("aggregations")) {
-      request.setAggregations(jsonRequest.getJSONObject("aggregations").toString().getBytes());
-    }
-    if (jsonRequest.has("from"))
+  public Search.QueryResultDto execute(Search.QueryTermsDto dtoQueries) throws SearchException {
+    try {
+      JSONObject jsonRequest = new JSONObject(build(dtoQueries, valueTableIndexManager));
+      ValueTableValuesIndex valueTableValuesIndex = valueTableIndexManager.getValueTableValuesIndex();
+      SearchRequestBuilder request = esProvider.getClient().prepareSearch()
+          .setIndices(valueTableValuesIndex.getIndexName())
+          .setTypes(valueTableValuesIndex.getIndexType())
+          .setQuery(jsonRequest.getString("query"));
+      if (jsonRequest.has("aggregations")) {
+        request.setAggregations(jsonRequest.getJSONObject("aggregations").toString().getBytes());
+      }
+      if (jsonRequest.has("from"))
         request.setFrom(jsonRequest.getInt("from"))
-        .setSize(jsonRequest.getInt("size"));
-    // TODO sort
-    if (jsonRequest.has("_source"))
+            .setSize(jsonRequest.getInt("size"));
+      // TODO sort
+      if (jsonRequest.has("_source"))
         request.setSource(jsonRequest.getString("_source"));
-    log.debug("request /{}/{} : {}", new String[] {valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString()});
-    SearchResponse response = request.execute().actionGet();
-    JSONObject jsonContent = new JSONObject(response.toString());
-    EsResultConverter converter = new EsResultConverter();
-    return converter.convert(jsonContent);
+      log.debug("request /{}/{} : {}", new String[]{valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString()});
+      SearchResponse response = request.execute().actionGet();
+      JSONObject jsonContent = new JSONObject(response.toString());
+      QueryResultConverter converter = new QueryResultConverter();
+      return converter.convert(jsonContent);
+    } catch (JSONException e) {
+      throw new SearchException(e.getMessage(), e);
+    }
   }
 
   /**
@@ -81,7 +84,7 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
    * @throws JSONException
    */
   @Override
-  public Search.QueryResultDto execute(Search.QueryTermDto dtoQuery) throws JSONException {
+  public Search.QueryResultDto execute(Search.QueryTermDto dtoQuery) throws SearchException {
     // wrap in a QueryTermsDto for API uniformity
     Search.QueryTermsDto dtoQueries = Search.QueryTermsDto.newBuilder().addQueries(dtoQuery).build();
     return execute(dtoQueries);
