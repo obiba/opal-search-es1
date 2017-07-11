@@ -240,7 +240,7 @@ public class ESSearchService implements SearchService {
   private JSONObject executeQuery(QuerySettings querySettings, String searchPath) throws SearchException {
     ESQueryExecutor executor = new ESQueryExecutor(this).setSearchPath(searchPath);
     try {
-      return executor.execute(JsonSearchQueryBuilder.newSearchQuery(querySettings).build());
+      return executor.execute(querySettings);
     } catch (JSONException e) {
       throw new SearchException(e.getMessage(), e);
     }

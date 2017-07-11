@@ -9,11 +9,13 @@
  */
 package org.obiba.es.opal.support;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.obiba.es.opal.ESSearchService;
+import org.obiba.opal.spi.search.QuerySettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +23,12 @@ public class ESQueryExecutor {
 
   private static final Logger log = LoggerFactory.getLogger(ESQueryExecutor.class);
 
-  private final ESSearchService elasticSearchProvider;
+  private final ESSearchService esSearchService;
 
   private String searchPath;
 
-  public ESQueryExecutor(ESSearchService elasticSearchProvider) {
-    this.elasticSearchProvider = elasticSearchProvider;
+  public ESQueryExecutor(ESSearchService esSearchService) {
+    this.esSearchService = esSearchService;
   }
 
   public ESQueryExecutor setSearchPath(String path) {
@@ -34,19 +36,29 @@ public class ESQueryExecutor {
     return this;
   }
 
-  public JSONObject execute(JSONObject jsonRequest) throws JSONException {
+  public JSONObject execute(QuerySettings querySettings) throws JSONException {
+    // TODO make a SearchRequestBuilder instead of a JSON object
+    return execute(JsonSearchQueryBuilder.newSearchQuery(querySettings).build());
+  }
+
+  private JSONObject execute(JSONObject jsonRequest) throws JSONException {
     if (log.isDebugEnabled()) log.debug("Request: " + searchPath + " => " + jsonRequest.toString(2));
     String[] parts = searchPath.split("/");
-    SearchRequestBuilder request = elasticSearchProvider.getClient().prepareSearch()
+
+    SearchRequestBuilder request = esSearchService.getClient().prepareSearch()
         .setIndices(parts[0])
         .setQuery(jsonRequest.getString("query"))
         .setFrom(jsonRequest.getInt("from"))
         .setSize(jsonRequest.getInt("size"));
     // TODO sort
+    if (jsonRequest.has("_source")) {
+      JSONArray jsonInclude = jsonRequest.getJSONArray("_source");
+      String[] include = new String[jsonInclude.length()];
+      for (int i = 0; i < jsonInclude.length(); i++) include[i] = jsonInclude.getString(i);
+      request.setFetchSource(include, new String[0]);
+    }
     if (parts.length > 1) request.setTypes(parts[1]);
-    if (jsonRequest.has("_source"))
-      request.setSource(jsonRequest.getString("_source"));
-    log.debug("request /{} : {}", new String[] {searchPath, request.toString()});
+    log.debug("request /{} : {}", new String[]{searchPath, request.toString()});
     SearchResponse response = request.execute().actionGet();
     JSONObject jsonResponse = new JSONObject(response.toString());
     return jsonResponse;

@@ -9,6 +9,7 @@
  */
 package org.obiba.es.opal.support;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -51,7 +52,7 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
   @Override
   public Search.QueryResultDto execute(Search.QueryTermsDto dtoQueries) throws SearchException {
     try {
-      JSONObject jsonRequest = new JSONObject(build(dtoQueries, valueTableIndexManager));
+      JSONObject jsonRequest = convert(dtoQueries);
       ValueTableValuesIndex valueTableValuesIndex = valueTableIndexManager.getValueTableValuesIndex();
       SearchRequestBuilder request = esProvider.getClient().prepareSearch()
           .setIndices(valueTableValuesIndex.getIndexName())
@@ -64,8 +65,12 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
         request.setFrom(jsonRequest.getInt("from"))
             .setSize(jsonRequest.getInt("size"));
       // TODO sort
-      if (jsonRequest.has("_source"))
-        request.setSource(jsonRequest.getString("_source"));
+      if (jsonRequest.has("_source")) {
+        JSONArray jsonInclude = jsonRequest.getJSONArray("_source");
+        String[] include = new String[jsonInclude.length()];
+        for (int i = 0; i < jsonInclude.length(); i++) include[i] = jsonInclude.getString(i);
+        request.setFetchSource(include, new String[0]);
+      }
       log.debug("request /{}/{} : {}", new String[]{valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString()});
       SearchResponse response = request.execute().actionGet();
       JSONObject jsonContent = new JSONObject(response.toString());
@@ -90,10 +95,9 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
     return execute(dtoQueries);
   }
 
-  private String build(Search.QueryTermsDto dtoQueries, ValueTableIndexManager valueTableIndexManager) throws JSONException {
+  private JSONObject convert(Search.QueryTermsDto dtoQueries) throws JSONException {
+    // TODO conver to a Search Request instead of a JSON object
     QueryTermConverter converter = new QueryTermConverter(valueTableIndexManager, termsFacetSizeLimit);
-    JSONObject queryJSON = converter.convert(dtoQueries);
-
-    return queryJSON.toString();
+    return converter.convert(dtoQueries);
   }
 }

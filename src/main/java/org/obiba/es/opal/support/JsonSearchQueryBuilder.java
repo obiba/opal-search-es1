@@ -106,7 +106,7 @@ public class JsonSearchQueryBuilder {
     return jsonFacets;
   }
 
-  private JSONObject buildFields() throws JSONException {
-    return new JSONObject().put("includes", new JSONArray(querySettings.getFields()));
+  private JSONArray buildFields() throws JSONException {
+    return new JSONArray(querySettings.getFields());
   }
 }
