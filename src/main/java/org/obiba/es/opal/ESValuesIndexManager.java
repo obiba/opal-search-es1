@@ -231,7 +231,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
 
     @Override
     public String getIndexType() {
-      return "valueSet";
+      return "ValueSet";
     }
 
     @Override

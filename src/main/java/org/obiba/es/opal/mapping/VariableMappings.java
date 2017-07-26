@@ -27,7 +27,8 @@ public class VariableMappings {
 
   public XContentBuilder map(String tableName, Variable variable, XContentBuilder builder) {
     try {
-      builder.startObject(tableName + ValuesIndexManager.FIELD_SEP + variable.getName());
+      String fieldName = (tableName + ValuesIndexManager.FIELD_SEP + variable.getName()).replace(' ','+').replace('.','_');
+      builder.startObject(fieldName);
 
       valueTypeMappings.forType(variable.getValueType()).map(builder);
 

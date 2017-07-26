@@ -176,7 +176,7 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
 
     @Override
     public String getIndexType() {
-      return "variable";
+      return "Variable";
     }
 
     @Override

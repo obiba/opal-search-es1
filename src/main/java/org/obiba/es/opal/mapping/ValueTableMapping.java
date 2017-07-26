@@ -37,14 +37,13 @@ public class ValueTableMapping {
       MappingHelper.mapNotAnalyzedString("reference", mapping);
 
       for(Variable variable : valueTable.getVariables()) {
-        variableMappings.map(indexType, variable, mapping);
+        variableMappings.map(valueTable.getTableReference(), variable, mapping);
       }
 
       mapping.endObject();// properties
 
       mapping.startObject("_meta") //
-          .field("_created", DateTimeType.get().valueOf(new Date()).toString()) //
-          .field("_reference", valueTable.getDatasource().getName() + "." + valueTable.getName()) //
+          .field("_updated", DateTimeType.get().valueOf(new Date()).toString()) //
           .endObject();
 
       mapping.endObject() // type
