@@ -284,16 +284,16 @@ public abstract class ESIndexManager implements IndexManager {
       if (!idxAdmin.exists(new IndicesExistsRequest(getIndexName())).actionGet().isExists()) {
         log.info("Creating index [{}]", getIndexName());
         idxAdmin.prepareCreate(getIndexName()).setSettings(getIndexSettings()).execute().actionGet();
-        createMapping();
       }
+      createMapping();
       return esSearchService.getClient().admin().cluster().prepareState().setIndices(getIndexName()).execute().actionGet()
           .getState().getMetaData().index(getIndexName());
     }
 
     private void createMapping() {
+      log.info("Creating index mapping [{}] for {}", getIndexName(), name);
       esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
           .setSource(getMapping()).execute().actionGet();
-
     }
 
     protected abstract XContentBuilder getMapping();
