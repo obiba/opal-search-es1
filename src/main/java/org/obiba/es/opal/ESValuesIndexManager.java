@@ -17,6 +17,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.obiba.es.opal.mapping.ValueTableMapping;
 import org.obiba.es.opal.support.ESIndexManager;
+import org.obiba.es.opal.support.ESMapping;
 import org.obiba.magma.Value;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
@@ -242,6 +243,11 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
     @Override
     protected XContentBuilder getMapping() {
       return new ValueTableMapping().createMapping(getIndexType(), resolveTable());
+    }
+
+    @Override
+    protected void cleanMappingProperties(ESMapping mapping) {
+      mapping.properties().removeProperties(getFieldName(""));
     }
 
     @Override

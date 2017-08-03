@@ -23,6 +23,7 @@ import org.elasticsearch.search.SearchHit;
 import org.obiba.es.opal.mapping.AttributeMapping;
 import org.obiba.es.opal.mapping.ValueTableVariablesMapping;
 import org.obiba.es.opal.support.ESIndexManager;
+import org.obiba.es.opal.support.ESMapping;
 import org.obiba.magma.*;
 import org.obiba.magma.support.VariableNature;
 import org.obiba.opal.spi.search.IndexSynchronization;
@@ -182,6 +183,11 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
     @Override
     protected XContentBuilder getMapping() {
       return new ValueTableVariablesMapping().createMapping(getIndexType());
+    }
+
+    @Override
+    protected void cleanMappingProperties(ESMapping mapping) {
+      // not necessary: all attributes are strings
     }
 
     @NotNull

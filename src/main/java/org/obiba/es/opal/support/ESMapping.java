@@ -15,33 +15,35 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-class ESMapping {
+public class ESMapping {
 
   private final String name;
 
   private final Map<String, Object> mapping;
 
-  ESMapping(String name, byte... mappingSource) throws IOException {
+  public ESMapping(String name, byte... mappingSource) throws IOException {
     this.name = name;
     mapping = XContentFactory.xContent(mappingSource).createParser(mappingSource).map();
   }
 
-  ESMapping(String name) throws IOException {
+  public ESMapping(String name) throws IOException {
     this.name = name;
     mapping = Maps.newHashMap();
   }
 
-  XContentBuilder toXContent() throws IOException {
+  public XContentBuilder toXContent() throws IOException {
     return JsonXContent.contentBuilder().map(mapping);
   }
 
-  Meta meta() {
+  public Meta meta() {
     return new Meta();
   }
 
-  Properties properties() {
+  public Properties properties() {
     return new Properties();
   }
 
@@ -50,7 +52,7 @@ class ESMapping {
   }
 
   @SuppressWarnings("ParameterHidesMemberVariable")
-  class Meta {
+  public class Meta {
 
     public boolean hasString(String name) {
       return meta().containsKey(name);
@@ -76,7 +78,21 @@ class ESMapping {
   }
 
   @SuppressWarnings("ParameterHidesMemberVariable, unchecked")
-  class Properties {
+  public class Properties {
+
+    public boolean hasProperty(String name) {
+      return properties().containsKey(name);
+    }
+
+    public void removeProperty(String name) {
+      properties().remove(name);
+    }
+
+    public void removeProperties(String namePrefix) {
+      Map<String, Object> props = properties();
+      List<String> fields = props.keySet().stream().filter(k -> k.startsWith(namePrefix)).collect(Collectors.toList());
+      fields.forEach(props::remove);
+    }
 
     public Map<String, Object> getProperty(String name) {
       return (Map<String, Object>)properties().get(name);
