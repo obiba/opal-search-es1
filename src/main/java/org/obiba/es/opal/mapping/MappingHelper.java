@@ -11,15 +11,26 @@
 package org.obiba.es.opal.mapping;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.obiba.magma.Variable;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.obiba.opal.spi.search.ValuesIndexManager.FIELD_SEP;
+
 
 public class MappingHelper {
 
   private static final String ANALYZED_FIELD_POSTFIX = "analyzed";
+
+  public static String toFieldName(String tableRef, Variable variable) {
+    return toFieldName(tableRef, variable.getName()) + FIELD_SEP + variable.getValueType().getName();
+  }
+
+  public static String toFieldName(String tableRef, String variable) {
+    return (tableRef + FIELD_SEP + variable).replace(' ','+').replace('.','_');
+  }
 
   public static void mapNotAnalyzedString(String field, XContentBuilder mapping) throws IOException {
     mapping.startObject(field);

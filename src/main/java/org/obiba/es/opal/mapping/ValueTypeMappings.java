@@ -75,9 +75,10 @@ public class ValueTypeMappings {
     public XContentBuilder map(@NotNull XContentBuilder builder) {
       try {
         builder.field("type", esType);
-        if(format != null) {
+        if(format != null)
           builder.field("format", format);
-        }
+        if ("string".equals(esType))
+          builder.field("index", "not_analyzed");
         return builder;
       } catch(IOException e) {
         throw new RuntimeException(e);

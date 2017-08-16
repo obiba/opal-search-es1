@@ -74,7 +74,9 @@ public abstract class ESIndexManager implements IndexManager {
   public boolean hasIndex(@NotNull ValueTable valueTable) {
     ClusterStateResponse resp = esSearchService.getClient().admin().cluster().prepareState().execute().actionGet();
     ValueTableIndex valueTableIndex = getIndex(valueTable);
-    ImmutableOpenMap<String, MappingMetaData> mappings = resp.getState().metaData().index(valueTableIndex.getIndexName()).getMappings();
+    IndexMetaData indexMetaData = resp.getState().metaData().index(valueTableIndex.getIndexName());
+    if (indexMetaData == null) return false;
+    ImmutableOpenMap<String, MappingMetaData> mappings = indexMetaData.getMappings();
     return mappings.containsKey(valueTableIndex.getIndexType());
   }
 
@@ -189,7 +191,7 @@ public abstract class ESIndexManager implements IndexManager {
     static final int MAX_SIZE = 10000;
 
     @NotNull
-    private final String name;
+    protected final String name;
 
     @NotNull
     private final String valueTableReference;
@@ -273,7 +275,7 @@ public abstract class ESIndexManager implements IndexManager {
         idxAdmin.prepareCreate(getIndexName()).setSettings(getIndexSettings()).execute().actionGet();
         createMapping();
       } else {
-        //updateMapping();
+        updateMapping();
       }
       return esSearchService.getClient().admin().cluster().prepareState().setIndices(getIndexName()).execute().actionGet()
           .getState().getMetaData().index(getIndexName());
@@ -286,8 +288,10 @@ public abstract class ESIndexManager implements IndexManager {
     }
 
     private void updateMapping() {
+      log.info("Updating index mapping [{}] for {}", getIndexName(), name);
       try {
       ESMapping mapping = readMapping();
+
       esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
           .setSource(mapping.toXContent()).execute().actionGet();
       } catch (IOException e) {

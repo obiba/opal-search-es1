@@ -15,6 +15,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.obiba.es.opal.mapping.MappingHelper;
 import org.obiba.es.opal.mapping.ValueTableMapping;
 import org.obiba.es.opal.support.ESIndexManager;
 import org.obiba.es.opal.support.ESMapping;
@@ -128,7 +129,6 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
 
         try {
           XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
-          //builder.field("identifier.analyzed", identifier); // analyzed copy of _id
           builder.field("identifier", identifier);
           builder.field("project", valueTable.getDatasource().getName());
           builder.field("datasource", valueTable.getDatasource().getName());
@@ -142,7 +142,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
           builder.endObject();
 
           IndexRequestBuilder requestBuilder = esSearchService.getClient()
-              .prepareIndex(getName(), index.getIndexType(), valueTable.getTableReference() + "-" + identifier).setParent(identifier).setSource(builder);
+              .prepareIndex(index.getIndexName(), index.getIndexType(), valueTable.getTableReference() + "-" + identifier).setParent(identifier).setSource(builder);
           bulkRequest.add(requestBuilder);
           done++;
 
@@ -155,7 +155,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
       }
 
       private void indexValue(XContentBuilder xcb, Variable variable, Value value, String identifier) throws IOException {
-        String fieldName = index.getFieldName(variable.getName());
+        String fieldName = index.getFieldName(variable);
 
         if(value.isSequence() && !value.isNull()) {
           List<Object> values = Lists.newArrayList();
@@ -231,13 +231,24 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
     }
 
     @Override
+    public String getIndexName() {
+      return super.getIndexName();
+    }
+
+    @Override
     public String getIndexType() {
       return "ValueSet";
     }
 
     @Override
-    public String getFieldName(String variable) {
-      return (getValueTableReference() + FIELD_SEP + variable).replace(' ','+').replace('.','_');
+    public String getFieldName(Variable variable) {
+      return MappingHelper.toFieldName(getValueTableReference(), variable);
+    }
+
+    @Override
+    public String getFieldName(String variableName) {
+      ValueTable table = resolveTable();
+      return MappingHelper.toFieldName(table.getTableReference(), table.getVariable(variableName));
     }
 
     @Override
@@ -247,7 +258,7 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
 
     @Override
     protected void cleanMappingProperties(ESMapping mapping) {
-      mapping.properties().removeProperties(getFieldName(""));
+      mapping.properties().removeProperties(MappingHelper.toFieldName(getValueTableReference(), ""));
     }
 
     @Override

@@ -64,6 +64,8 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
       if (jsonRequest.has("from"))
         request.setFrom(jsonRequest.getInt("from"))
             .setSize(jsonRequest.getInt("size"));
+      else
+        request.setFrom(0).setSize(0);
       // TODO sort
       if (jsonRequest.has("_source")) {
         JSONArray jsonInclude = jsonRequest.getJSONArray("_source");
@@ -73,6 +75,7 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
       }
       log.debug("request /{}/{} : {}", new String[]{valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString()});
       SearchResponse response = request.execute().actionGet();
+      log.debug("response /{}/{} : {}", new String[]{valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), response.toString()});
       JSONObject jsonContent = new JSONObject(response.toString());
       QueryResultConverter converter = new QueryResultConverter();
       return converter.convert(jsonContent);
