@@ -13,9 +13,12 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.obiba.magma.Variable;
 
 import java.io.IOException;
+import java.util.Map;
 
 public interface VariableMapping {
 
   void map(Variable variable, XContentBuilder builder) throws IOException;
+
+  void map(Variable variable, Map<String, Object> mapping);
 
 }

@@ -181,13 +181,14 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
     }
 
     @Override
-    protected XContentBuilder getMapping() {
+    protected XContentBuilder createMapping() {
       return new ValueTableVariablesMapping().createMapping(getIndexType());
     }
 
     @Override
-    protected void cleanMappingProperties(ESMapping mapping) {
-      // not necessary: all attributes are strings
+    protected XContentBuilder updateMapping(ESMapping mapping) {
+      // ignore: attributes are strings
+      return null;
     }
 
     @NotNull

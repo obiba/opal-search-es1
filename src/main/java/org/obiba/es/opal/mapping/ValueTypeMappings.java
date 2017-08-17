@@ -72,17 +72,21 @@ public class ValueTypeMappings {
     }
 
     @Override
-    public XContentBuilder map(@NotNull XContentBuilder builder) {
+    public void map(@NotNull XContentBuilder builder) {
       try {
         builder.field("type", esType);
         if(format != null)
           builder.field("format", format);
-        if ("string".equals(esType))
-          builder.field("index", "not_analyzed");
-        return builder;
       } catch(IOException e) {
         throw new RuntimeException(e);
       }
+    }
+
+    @Override
+    public void map(Map<String, Object> mapping) {
+      mapping.put("type", esType);
+      if(format != null)
+        mapping.put("format", format);
     }
 
   }

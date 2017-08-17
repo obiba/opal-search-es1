@@ -252,13 +252,13 @@ public class ESValuesIndexManager extends ESIndexManager implements ValuesIndexM
     }
 
     @Override
-    protected XContentBuilder getMapping() {
-      return new ValueTableMapping().createMapping(getIndexType(), resolveTable());
+    protected XContentBuilder createMapping() {
+      return ValueTableMapping.createMapping(getIndexType(), resolveTable());
     }
 
     @Override
-    protected void cleanMappingProperties(ESMapping mapping) {
-      mapping.properties().removeProperties(MappingHelper.toFieldName(getValueTableReference(), ""));
+    protected XContentBuilder updateMapping(ESMapping mapping) {
+      return ValueTableMapping.updateMapping(resolveTable(), mapping);
     }
 
     @Override

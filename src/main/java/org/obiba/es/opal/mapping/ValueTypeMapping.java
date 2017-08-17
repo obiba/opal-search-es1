@@ -11,8 +11,12 @@ package org.obiba.es.opal.mapping;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
+import java.util.Map;
+
 public interface ValueTypeMapping {
 
-  XContentBuilder map(XContentBuilder builder);
+  void map(XContentBuilder builder);
+
+  void map(Map<String, Object> mapping);
 
 }

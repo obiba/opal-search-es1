@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 import org.apache.lucene.index.IndexNotFoundException;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public abstract class ESIndexManager implements IndexManager {
 
@@ -273,35 +271,43 @@ public abstract class ESIndexManager implements IndexManager {
       if (!idxAdmin.exists(new IndicesExistsRequest(getIndexName())).actionGet().isExists()) {
         log.info("Creating index [{}]", getIndexName());
         idxAdmin.prepareCreate(getIndexName()).setSettings(getIndexSettings()).execute().actionGet();
-        createMapping();
+        createIndexWithMapping();
       } else {
-        updateMapping();
+        updateIndexWithMapping();
       }
       return esSearchService.getClient().admin().cluster().prepareState().setIndices(getIndexName()).execute().actionGet()
           .getState().getMetaData().index(getIndexName());
     }
 
-    private void createMapping() {
+    private void createIndexWithMapping() {
       log.info("Creating index mapping [{}] for {}", getIndexName(), name);
       esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
-          .setSource(getMapping()).execute().actionGet();
+          .setSource(createMapping()).execute().actionGet();
     }
 
-    private void updateMapping() {
+    private void updateIndexWithMapping() {
       log.info("Updating index mapping [{}] for {}", getIndexName(), name);
-      try {
       ESMapping mapping = readMapping();
-
-      esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
-          .setSource(mapping.toXContent()).execute().actionGet();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      XContentBuilder newMapping = updateMapping(mapping);
+      if (newMapping != null) {
+        esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
+            .setSource(newMapping).execute().actionGet();
       }
     }
 
-    protected abstract XContentBuilder getMapping();
+    /**
+     * Create a full index mapping for the current table.
+     *
+     * @return
+     */
+    protected abstract XContentBuilder createMapping();
 
-    protected abstract void cleanMappingProperties(ESMapping mapping);
+    /**
+     * Update the index mapping properties for the current table.
+     *
+     * @param mapping
+     */
+    protected abstract XContentBuilder updateMapping(ESMapping mapping);
 
     @Override
     public boolean isUpToDate() {
@@ -370,7 +376,6 @@ public abstract class ESIndexManager implements IndexManager {
         ESMapping mapping = readMapping();
         if (mapping.meta().hasString(name)) {
           mapping.meta().deleteString(name);
-          cleanMappingProperties(mapping);
           esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
               .setSource(mapping.toXContent()).execute().actionGet();
         }

@@ -11,6 +11,7 @@ package org.obiba.es.opal.mapping;
 
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.obiba.es.opal.support.ESMapping;
 import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
 import org.obiba.magma.type.DateTimeType;
@@ -20,9 +21,7 @@ import java.util.Date;
 
 public class ValueTableMapping {
 
-  private final VariableMappings variableMappings = new VariableMappings();
-
-  public XContentBuilder createMapping(String indexType, ValueTable valueTable) {
+  public static XContentBuilder createMapping(String indexType, ValueTable valueTable) {
     try {
       XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(indexType);
       mapping.startObject("_all").field("enabled", false).endObject();
@@ -36,8 +35,9 @@ public class ValueTableMapping {
       MappingHelper.mapNotAnalyzedString("table", mapping);
       MappingHelper.mapNotAnalyzedString("reference", mapping);
 
+      VariableMappings variableMappings = new VariableMappings();
       for(Variable variable : valueTable.getVariables()) {
-        variableMappings.map(valueTable.getTableReference(), variable, mapping);
+        variableMappings.map(valueTable, variable, mapping);
       }
 
       mapping.endObject();// properties
@@ -54,4 +54,15 @@ public class ValueTableMapping {
     }
   }
 
+  public static XContentBuilder updateMapping(ValueTable valueTable, ESMapping mapping) {
+    VariableMappings variableMappings = new VariableMappings();
+    for(Variable variable : valueTable.getVariables()) {
+      variableMappings.map(valueTable, variable, mapping);
+    }
+    try {
+      return mapping.toXContent();
+    } catch(IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

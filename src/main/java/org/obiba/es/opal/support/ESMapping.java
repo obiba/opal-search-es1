@@ -13,6 +13,7 @@ import com.google.common.collect.Maps;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.common.xcontent.json.JsonXContentParser;
 
 import java.io.IOException;
 import java.util.List;
@@ -96,6 +97,11 @@ public class ESMapping {
 
     public Map<String, Object> getProperty(String name) {
       return (Map<String, Object>)properties().get(name);
+    }
+
+    public Properties setProperty(String name, Object value) {
+      properties().put(name, value);
+      return this;
     }
 
     private Map<String, Object> properties() {

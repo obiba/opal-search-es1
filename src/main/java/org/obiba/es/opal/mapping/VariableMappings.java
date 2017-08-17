@@ -10,47 +10,63 @@
 package org.obiba.es.opal.mapping;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.obiba.es.opal.support.ESMapping;
+import org.obiba.magma.ValueTable;
 import org.obiba.magma.Variable;
 import org.obiba.magma.type.TextType;
 import org.obiba.opal.spi.search.ValuesIndexManager;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class VariableMappings {
 
-//  private static final Logger log = LoggerFactory.getLogger(VariableMappings.class);
-
   private final ValueTypeMappings valueTypeMappings = new ValueTypeMappings();
 
-  private final Iterable<VariableMapping> mappings = ImmutableList.of(new Categorical());
+  private final Iterable<VariableMapping> mappings = ImmutableList.of(new CategoricalMapping());
 
-  public XContentBuilder map(String tableName, Variable variable, XContentBuilder builder) {
+  public void map(ValueTable table, Variable variable, XContentBuilder builder) {
     try {
-      String fieldName = MappingHelper.toFieldName(tableName, variable);
+      String fieldName = MappingHelper.toFieldName(table.getTableReference(), variable);
       builder.startObject(fieldName);
-
       valueTypeMappings.forType(variable.getValueType()).map(builder);
-
-      for(VariableMapping variableMapping : mappings) {
+      for(VariableMapping variableMapping : mappings)
         variableMapping.map(variable, builder);
-      }
-
-      return builder.endObject();
+      builder.endObject();
     } catch(IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  public void map(ValueTable table, Variable variable, ESMapping mapping) {
+    String fieldName = MappingHelper.toFieldName(table.getTableReference(), variable);
+    if(!mapping.properties().hasProperty(fieldName)) {
+      Map<String, Object> fieldMapping = Maps.newHashMap();
+      valueTypeMappings.forType(variable.getValueType()).map(fieldMapping);
+      for(VariableMapping variableMapping : mappings)
+        variableMapping.map(variable, fieldMapping);
+      mapping.properties().setProperty(fieldName, fieldMapping);
     }
   }
 
   /**
    * Used to prevent Lucene analyzers from running on categorical values
    */
-  private static class Categorical implements VariableMapping {
+  private static class CategoricalMapping implements VariableMapping {
 
     @Override
     public void map(Variable variable, XContentBuilder builder) throws IOException {
-      if(variable.hasCategories() && variable.getValueType() == TextType.get()) {
+      if(variable.hasCategories() && TextType.get().equals(variable.getValueType())) {
         builder.field("index", "not_analyzed");
+      }
+    }
+
+    @Override
+    public void map(Variable variable, Map<String, Object> mapping) {
+      if(variable.hasCategories() && TextType.get().equals(variable.getValueType())) {
+        mapping.put("index", "not_analyzed");
       }
     }
   }

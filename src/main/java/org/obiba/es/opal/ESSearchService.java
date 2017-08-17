@@ -19,11 +19,10 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.obiba.es.opal.support.ESQueryExecutor;
 import org.obiba.es.opal.support.ESSearchQueryExecutor;
-import org.obiba.es.opal.support.JsonSearchQueryBuilder;
 import org.obiba.es.opal.support.QueryResultConverter;
+import org.obiba.opal.spi.search.*;
 import org.obiba.opal.spi.search.support.ItemResultDtoStrategy;
 import org.obiba.opal.spi.search.support.ValueTableIndexManager;
-import org.obiba.opal.spi.search.*;
 import org.obiba.opal.web.model.Search;
 
 import java.io.File;
