@@ -91,6 +91,12 @@ public abstract class ESIndexManager implements IndexManager {
   }
 
   @Override
+  public void drop() {
+    esSearchService.getClient().admin().indices().prepareDelete(getName()).execute();
+    indices.clear();
+  }
+
+  @Override
   public boolean isIndexUpToDate(@NotNull ValueTable valueTable) {
     return getIndex(valueTable).isUpToDate();
   }
