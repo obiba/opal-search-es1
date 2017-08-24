@@ -217,7 +217,7 @@ public abstract class ESIndexManager implements IndexManager {
     }
 
     @NotNull
-    protected String getValueTableReference() {
+    public String getValueTableReference() {
       return valueTableReference;
     }
 
