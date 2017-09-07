@@ -10,11 +10,16 @@
 
 package org.obiba.es.opal;
 
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.obiba.es.opal.support.ESQueryExecutor;
@@ -26,8 +31,14 @@ import org.obiba.opal.spi.search.support.ValueTableIndexManager;
 import org.obiba.opal.web.model.Search;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ThreadFactory;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class ESSearchService implements SearchService {
 
@@ -91,7 +102,7 @@ public class ESSearchService implements SearchService {
 
   @Override
   public boolean isRunning() {
-    return running && esNode != null;
+    return running && client != null;
   }
 
   @Override
@@ -108,14 +119,14 @@ public class ESSearchService implements SearchService {
       if (defaultSettings.exists())
         builder.loadFromPath(defaultSettings.toPath());
 
-      builder.loadFromSource(settings.getEsSettings());
+      builder.loadFromSource(settings.getEsSettings())
+          .put("cluster.name", getClusterName());
 
-      esNode = NodeBuilder.nodeBuilder() //
-          .client(!isDataNode()) //
-          .settings(builder) //
-          .clusterName(getClusterName()) //
-          .node();
-      client = esNode.client();
+      if (isTransportClient())
+        createTransportClient(builder);
+      else
+        createNodeClient(builder);
+
       running = true;
     }
   }
@@ -124,6 +135,7 @@ public class ESSearchService implements SearchService {
   public void stop() {
     running = false;
     if (esNode != null) esNode.close();
+    if (client != null) client.close();
     esNode = null;
     client = null;
     valuesIndexManager = null;
@@ -151,7 +163,6 @@ public class ESSearchService implements SearchService {
   //
   // Search methods
   //
-
 
   @Override
   public void executeIdentifiersQuery(QuerySettings querySettings, String searchPath, HitsQueryCallback<String> callback) throws SearchException {
@@ -258,8 +269,35 @@ public class ESSearchService implements SearchService {
     }
   }
 
-  private File getDataFolder() {
-    return getServiceFolder(DATA_DIR_PROPERTY);
+  private void createTransportClient(Settings.Builder builder) {
+    builder.put("client.transport.sniff", isTransportSniff());
+    final TransportClient transportClient = TransportClient.builder().settings(builder.build()).build();
+    getTransportAddresses().forEach(ta -> {
+      int port = 9300;
+      String host = ta;
+      int sepIdx = ta.lastIndexOf(':');
+
+      if (sepIdx > 0) {
+        port = Integer.parseInt(ta.substring(sepIdx + 1, ta.length()));
+        host = ta.substring(0, sepIdx);
+      }
+
+      try {
+        transportClient.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(host), port));
+      } catch (UnknownHostException e) {
+        Throwables.propagate(e);
+      }
+    });
+    client = transportClient;
+  }
+
+  private void createNodeClient(Settings.Builder builder) {
+    esNode = NodeBuilder.nodeBuilder() //
+        .client(!isDataNode()) //
+        .settings(builder) //
+        .clusterName(getClusterName()) //
+        .node();
+    client = esNode.client();
   }
 
   private File getWorkFolder() {
@@ -282,7 +320,21 @@ public class ESSearchService implements SearchService {
     return settings == null ? "opal" : settings.getClusterName();
   }
 
+  private boolean isTransportClient() {
+    return Boolean.parseBoolean(properties.getProperty("transportClient", "false"));
+  }
+
+  private boolean isTransportSniff() {
+    return Boolean.parseBoolean(properties.getProperty("transportSniff", "false"));
+  }
+
+  private List<String> getTransportAddresses() {
+    String addStr = properties.getProperty("transportAddresses", "").trim();
+    return addStr.isEmpty() ? Lists.newArrayList() :
+        Stream.of(addStr.split(",")).map(String::trim).collect(toList());
+  }
+
   private boolean isDataNode() {
-    return settings == null ? true : settings.isDataNode();
+    return settings == null || settings.isDataNode();
   }
 }
