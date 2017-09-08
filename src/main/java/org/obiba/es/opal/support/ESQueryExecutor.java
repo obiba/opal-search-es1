@@ -9,11 +9,13 @@
  */
 package org.obiba.es.opal.support;
 
+import com.google.common.collect.Iterators;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.sort.SortOrder;
 import org.obiba.es.opal.ESSearchService;
 import org.obiba.opal.spi.search.QuerySettings;
 import org.slf4j.Logger;
@@ -50,7 +52,21 @@ public class ESQueryExecutor {
         .setQuery(jsonRequest.getString("query"))
         .setFrom(jsonRequest.getInt("from"))
         .setSize(jsonRequest.getInt("size"));
-    // TODO sort
+
+    if (jsonRequest.has("sort")) {
+      JSONObject sort = jsonRequest.getJSONObject("sort");
+      try {
+        for (String key : Iterators.toArray(sort.keys(), String.class)) {
+          String order = sort.getJSONObject(key).getString("order");
+          request.addSort(key, SortOrder.valueOf(order.toUpperCase()));
+        }
+      } catch (Exception e) {
+        log.warn("Unable to interpret the sort object: " + sort.toString());
+      }
+    }
+    if (jsonRequest.has("filter")) {
+      request.setPostFilter(jsonRequest.getString("filter"));
+    }
     if (jsonRequest.has("_source")) {
       JSONArray jsonInclude = jsonRequest.getJSONArray("_source");
       String[] include = new String[jsonInclude.length()];
