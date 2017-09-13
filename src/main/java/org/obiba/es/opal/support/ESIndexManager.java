@@ -9,8 +9,14 @@
  */
 package org.obiba.es.opal.support;
 
-import com.google.common.collect.Maps;
-import org.apache.lucene.index.IndexNotFoundException;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -40,12 +46,7 @@ import org.obiba.opal.spi.search.ValueTableIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
+import com.google.common.collect.Maps;
 
 public abstract class ESIndexManager implements IndexManager {
 
@@ -106,8 +107,9 @@ public abstract class ESIndexManager implements IndexManager {
   }
 
   protected Settings getIndexSettings() {
-    return Settings.settingsBuilder() //
-        .put("number_of_shards", esSearchService.getConfig().getShards()) //
+    return Settings.settingsBuilder()
+        .put(esSearchService.getClient().settings().getByPrefix("index."))
+        .put("number_of_shards", esSearchService.getConfig().getShards())
         .put("number_of_replicas", esSearchService.getConfig().getReplicas()).build();
   }
 
@@ -304,11 +306,12 @@ public abstract class ESIndexManager implements IndexManager {
     }
 
     private void updateIndexWithMapping() {
-      log.info("Updating index mapping [{}] for {}", getIndexName(), name);
+      String indexName = getIndexName();
+      log.info("Updating index mapping [{}] for {}", indexName, name);
       ESMapping mapping = readMapping();
       XContentBuilder newMapping = updateMapping(mapping);
       if (newMapping != null) {
-        esSearchService.getClient().admin().indices().preparePutMapping(getIndexName()).setType(getIndexType())
+        esSearchService.getClient().admin().indices().preparePutMapping(indexName).setType(getIndexType())
             .setSource(newMapping).execute().actionGet();
       }
     }
