@@ -10,7 +10,6 @@
 
 package org.obiba.es.opal;
 
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import org.codehaus.jettison.json.JSONArray;

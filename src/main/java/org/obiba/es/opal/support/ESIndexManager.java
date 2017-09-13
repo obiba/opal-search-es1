@@ -9,13 +9,16 @@
  */
 package org.obiba.es.opal.support;
 
-import com.google.common.collect.Maps;
-import org.apache.lucene.index.IndexNotFoundException;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
-import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
@@ -43,12 +46,7 @@ import org.obiba.opal.spi.search.ValueTableIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
+import com.google.common.collect.Maps;
 
 public abstract class ESIndexManager implements IndexManager {
 
@@ -310,16 +308,6 @@ public abstract class ESIndexManager implements IndexManager {
     private void updateIndexWithMapping() {
       String indexName = getIndexName();
       log.info("Updating index mapping [{}] for {}", indexName, name);
-
-      // get only the index settings (cannot reset shards or replicate settings)
-      Settings settings =
-          Settings.settingsBuilder().put(esSearchService.getClient().settings().getByPrefix("index.")).build();
-
-      // make sure to reset the configs in case they have been changed
-      esSearchService.getClient().admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
-      esSearchService.getClient().admin().indices().prepareUpdateSettings(indexName).setSettings(settings).execute().actionGet();
-      esSearchService.getClient().admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
-
       ESMapping mapping = readMapping();
       XContentBuilder newMapping = updateMapping(mapping);
       if (newMapping != null) {
