@@ -61,7 +61,7 @@ public class QueryTermConverterTest {
     QueryTermConverter converter = new QueryTermConverter(valueTableIndexManager, 10);
     Search.QueryTermsDto dtoQuery = createSimpleQueryDto(variableName);
 
-    JSONObject jsonExpected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"datasource:opal-data AND table:CIPreliminaryQuestionnaire\"} }, \"size\":0, " + //
+    JSONObject jsonExpected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"reference:(opal-data.CIPreliminaryQuestionnaire)\"} }, \"size\":0, " + //
         "\"aggregations\":{\"0\":{\"terms\":{\"field\":\"opal-data-cipreliminaryquestionnaire-LAST_MEAL_WHEN\", \"size\": 0 } } } }");
 
     JSONObject jsonResult = converter.convert(dtoQuery);
@@ -78,7 +78,7 @@ public class QueryTermConverterTest {
     QueryTermConverter converter = new QueryTermConverter(valueTableIndexManager, 10);
     Search.QueryTermsDto dtoQuery = createSimpleQueryDto(variableName);
 
-    JSONObject jsonExpected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"datasource:opal-data AND table:StandingHeight\"} }, \"size\":0, " + //
+    JSONObject jsonExpected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"reference:(opal-data.StandingHeight)\"} }, \"size\":0, " + //
         "\"aggregations\":{\"0\":{\"extended_stats\":{\"field\":\"opal-data" + //
         "-standingheight-RES_FIRST_HEIGHT\"} } } }");
 
@@ -96,7 +96,7 @@ public class QueryTermConverterTest {
     QueryTermConverter converter = new QueryTermConverter(valueTableIndexManager, 1000);
     Search.QueryTermsDto dtoQuery = createSimpleQueryDto(variableName);
 
-    JSONObject jsonExpected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"datasource:opal-data AND table:StandingHeight\"} }, \"size\":0, " + //
+    JSONObject jsonExpected = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"reference:(opal-data.StandingHeight)\"} }, \"size\":0, " + //
         "\"aggregations\":{\"0\":{\"terms\":{\"field\":\"opal-data" + //
         "-StandingHeight-NON_CATEGORICAL_CONTINUOUS\", \"size\": 1000} } } }");
 

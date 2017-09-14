@@ -9,20 +9,26 @@
  */
 package org.obiba.es.opal.support;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.obiba.magma.NoSuchVariableException;
+import org.obiba.magma.support.MagmaEngineVariableResolver;
 import org.obiba.magma.support.VariableNature;
 import org.obiba.opal.spi.search.support.ValueTableIndexManager;
 import org.obiba.opal.web.model.Search;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Converts a DTO query to an elastic search JSON query
  */
-public class QueryTermConverter {
+class QueryTermConverter {
 
-  private final ValueTableIndexManager valueTableIndexManager;
+  private final Map<String, ValueTableIndexManager> valueTableIndexManagers = Maps.newLinkedHashMap();
 
   private final int termsFacetSize;
 
@@ -30,8 +36,8 @@ public class QueryTermConverter {
    * @param valueTableIndexManager - ValueTableIndexManager provides certain variable information required for conversion
    * @param termsFacetSize - used to limit the 'terms' facet results
    */
-  public QueryTermConverter(ValueTableIndexManager valueTableIndexManager, int termsFacetSize) {
-    this.valueTableIndexManager = valueTableIndexManager;
+  QueryTermConverter(ValueTableIndexManager valueTableIndexManager, int termsFacetSize) {
+    this.valueTableIndexManagers.put(valueTableIndexManager.getReference(), valueTableIndexManager);
     this.termsFacetSize = termsFacetSize;
   }
 
@@ -42,13 +48,10 @@ public class QueryTermConverter {
    * @return
    * @throws JSONException
    */
-  public JSONObject convert(Search.QueryTermsDto dtoQueries) throws JSONException {
-    JSONObject jsonQuery = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"" + valueTableIndexManager.getQuery() + "\"}}, \"size\":0}");
+  JSONObject convert(Search.QueryTermsDto dtoQueries) throws JSONException {
     JSONObject jsonAggregations = new JSONObject();
-
     for(Search.QueryTermDto dtoQuery : dtoQueries.getQueriesList()) {
       JSONObject jsonAggregation = new JSONObject();
-
       if(dtoQuery.hasExtension(Search.LogicalTermDto.filter)) {
         convertLogicalFilter("filter", dtoQuery.getExtension(Search.LogicalTermDto.filter), jsonAggregation);
       } else if(dtoQuery.hasExtension(Search.LogicalTermDto.facetFilter)) {
@@ -58,10 +61,11 @@ public class QueryTermConverter {
       } else if(dtoQuery.hasGlobal()) {
         convertGlobal(dtoQuery, jsonAggregation);
       }
-
       jsonAggregations.put(dtoQuery.getFacet(), jsonAggregation);
     }
 
+    // get the query string after the aggregations have been inspected
+    JSONObject jsonQuery = new JSONObject("{\"query\":{\"query_string\":{\"query\":\"" + getQueryString() + "\"}}, \"size\":0}");
     jsonQuery.put("aggregations", jsonAggregations);
 
     return jsonQuery;
@@ -146,13 +150,13 @@ public class QueryTermConverter {
         jsonAggregation.put("terms", jsonField);
         break;
       case STATS:
-        if(valueTableIndexManager.getVariableNature(variable) != VariableNature.CONTINUOUS)
+        if(getVariableNature(variable) != VariableNature.CONTINUOUS)
           throw new IllegalArgumentException(
               "Statistics aggregation is only applicable to numeric continuous variables");
         jsonAggregation.put("extended_stats", jsonField);
         break;
       case PERCENTILES:
-        if(valueTableIndexManager.getVariableNature(variable) != VariableNature.CONTINUOUS)
+        if(getVariableNature(variable) != VariableNature.CONTINUOUS)
           throw new IllegalArgumentException(
               "Percentiles aggregation is only applicable to numeric continuous variables");
         jsonAggregation.put("percentiles", jsonField);
@@ -174,7 +178,7 @@ public class QueryTermConverter {
     JSONObject jsonField = new JSONObject();
     jsonField.put("field", variableFieldName(variable));
 
-    switch(valueTableIndexManager.getVariableNature(variable)) {
+    switch(getVariableNature(variable)) {
 
       case CONTINUOUS:
         jsonAggregation.put("extended_stats", jsonField);
@@ -257,7 +261,38 @@ public class QueryTermConverter {
   }
 
   private String variableFieldName(String variable) {
-    return valueTableIndexManager.getIndexFieldName(variable);
+    try {
+      return valueTableIndexManagers.values().iterator().next().getIndexFieldName(variable);
+    } catch (NoSuchVariableException e) {
+      MagmaEngineVariableResolver resolver = MagmaEngineVariableResolver.valueOf(variable);
+      ValueTableIndexManager manager = getValueTableIndexManager(resolver);
+      if (manager == null) throw e;
+      return manager.getIndexFieldName(resolver.getVariableName());
+    }
+  }
+
+  private String getQueryString() {
+    return Joiner.on(" OR ").join(valueTableIndexManagers.values().stream().map(ValueTableIndexManager::getQuery).collect(Collectors.toList()));
+  }
+
+  private VariableNature getVariableNature(String variable) {
+    try {
+      return valueTableIndexManagers.values().iterator().next().getVariableNature(variable);
+    } catch (NoSuchVariableException e) {
+      MagmaEngineVariableResolver resolver = MagmaEngineVariableResolver.valueOf(variable);
+      ValueTableIndexManager manager = getValueTableIndexManager(resolver);
+      if (manager == null) throw e;
+      return manager.getVariableNature(resolver.getVariableName());
+    }
+  }
+
+  private ValueTableIndexManager getValueTableIndexManager(MagmaEngineVariableResolver resolver) {
+    if (!resolver.hasDatasourceName() || !resolver.hasTableName()) return null;
+    String ref = resolver.getDatasourceName() + "." + resolver.getTableName();
+    if (!valueTableIndexManagers.containsKey(ref)) {
+      valueTableIndexManagers.put(ref, valueTableIndexManagers.values().iterator().next().copy(resolver.getDatasourceName(), resolver.getTableName()));
+    }
+    return valueTableIndexManagers.get(ref);
   }
 
 }
