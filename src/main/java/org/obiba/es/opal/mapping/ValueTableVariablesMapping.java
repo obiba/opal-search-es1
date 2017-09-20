@@ -58,6 +58,8 @@ public class ValueTableVariablesMapping {
           .field("_created", DateTimeType.get().valueOf(new Date()).toString()) //
           .endObject();
 
+      mapping.field("date_detection", false);
+
       mapping.endObject() // type
           .endObject(); // mapping
       return mapping;
