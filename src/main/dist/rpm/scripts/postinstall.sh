@@ -42,7 +42,7 @@ case "$1" in
 
           chown -R opal:adm $OPAL_HOME/plugins/$NEW_PLUGIN
           echo '***'
-          echo '*** IMPORTANT: Opal Search ES1 plugin has been installed, you must restart Opal server.'
+          echo '*** IMPORTANT: Opal Search ES plugin has been installed, you must restart Opal server.'
           echo '***'
         fi
       fi

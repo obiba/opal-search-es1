@@ -10,8 +10,8 @@ Package: opal-search-es
 Architecture: all
 Pre-Depends:
 Depends: opal (>= 2.10)
-Description: OBiBa Opal Search ES1
- Opal Search ES1 installs a Opal search plugin based on Elasticsearch 1.x.
+Description: OBiBa Opal Search ES
+ Opal Search ES installs a Opal search plugin based on Elasticsearch 2.4.x.
  .
  OBiBa is an international software development project committed to building a
  full suite of open source software for biobanks. It is comprised of several
