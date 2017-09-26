@@ -495,7 +495,7 @@
 
   <ciManagement>
     <system>Jenkins</system>
-    <url>http://ci.obiba.org/view/Opal/job/Opal</url>
+    <url>http://ci.obiba.org/view/Opal/job/Opal-search-ES</url>
   </ciManagement>
 
   <mailingLists>
