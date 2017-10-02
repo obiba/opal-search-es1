@@ -53,12 +53,6 @@
           org.apache.lucene:*
         </include>
         <include>
-          org.yaml:*
-        </include>
-        <include>
-          com.fasterxml.jackson.core:*
-        </include>
-        <include>
           com.fasterxml.jackson.dataformat:*
         </include>
         <include>
