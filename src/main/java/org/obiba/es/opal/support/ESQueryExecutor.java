@@ -44,7 +44,7 @@ public class ESQueryExecutor {
   }
 
   private JSONObject execute(JSONObject jsonRequest) throws JSONException {
-    if (log.isDebugEnabled()) log.debug("Request: " + searchPath + " => " + jsonRequest.toString(2));
+    if (log.isTraceEnabled()) log.trace("Request: " + searchPath + " => " + jsonRequest.toString(2));
     String[] parts = searchPath.split("/");
 
     SearchRequestBuilder request = esSearchService.getClient().prepareSearch()
@@ -74,7 +74,7 @@ public class ESQueryExecutor {
       request.setFetchSource(include, new String[0]);
     }
     if (parts.length > 1) request.setTypes(parts[1]);
-    log.debug("request /{} : {}", new String[]{searchPath, request.toString()});
+    log.debug("request /{} : {}", searchPath, request.toString());
     SearchResponse response = request.execute().actionGet();
     JSONObject jsonResponse = new JSONObject(response.toString());
     return jsonResponse;

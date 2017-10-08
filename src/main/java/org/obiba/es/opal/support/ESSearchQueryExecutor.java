@@ -73,9 +73,9 @@ public class ESSearchQueryExecutor implements SearchQueryExecutor {
         for (int i = 0; i < jsonInclude.length(); i++) include[i] = jsonInclude.getString(i);
         request.setFetchSource(include, new String[0]);
       }
-      log.debug("request /{}/{} : {}", new String[]{valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString()});
+      log.debug("request /{}/{} : {}", valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), request.toString());
       SearchResponse response = request.execute().actionGet();
-      log.debug("response /{}/{} : {}", new String[]{valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), response.toString()});
+      log.debug("response /{}/{} : {}", valueTableValuesIndex.getIndexName(), valueTableValuesIndex.getIndexType(), response.toString());
       JSONObject jsonContent = new JSONObject(response.toString());
       QueryResultConverter converter = new QueryResultConverter();
       return converter.convert(jsonContent);
