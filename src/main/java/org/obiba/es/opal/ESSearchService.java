@@ -108,7 +108,7 @@ public class ESSearchService implements SearchService {
   public void start() {
     // do init stuff
     if (settings != null) {
-      File pluginWorkDir = new File(getWorkFolder(), ES_BRANCH);
+      File pluginWorkDir = new File(getWorkFolder(), properties.getProperty("es.version", ES_BRANCH));
       Settings.Builder builder = Settings.settingsBuilder() //
           .put("path.home", getInstallFolder().getAbsolutePath()) //
           .put("path.data", new File(pluginWorkDir, "data").getAbsolutePath()) //
