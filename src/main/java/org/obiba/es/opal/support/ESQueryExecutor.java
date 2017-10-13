@@ -54,10 +54,12 @@ public class ESQueryExecutor {
         .setSize(jsonRequest.getInt("size"));
 
     if (jsonRequest.has("sort")) {
-      JSONObject sort = jsonRequest.getJSONObject("sort");
+      JSONArray sort = jsonRequest.getJSONArray("sort");
       try {
-        for (String key : Iterators.toArray(sort.keys(), String.class)) {
-          String order = sort.getJSONObject(key).getString("order");
+        for (int i=0; i<sort.length(); i++) {
+          JSONObject sortObject = sort.getJSONObject(i);
+          String key = sortObject.keys().next().toString();
+          String order = sortObject.getJSONObject(key).getString("order");
           request.addSort(key, SortOrder.valueOf(order.toUpperCase()));
         }
       } catch (Exception e) {

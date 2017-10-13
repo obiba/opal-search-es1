@@ -74,12 +74,19 @@ public class JsonSearchQueryBuilder {
     return new JSONObject().put("has_child", json);
   }
 
-  private JSONObject buildSortJson() throws JSONException {
-    if (!querySettings.hasSortField()) {
-      return new JSONObject();
+  private JSONArray buildSortJson() throws JSONException {
+    if (!querySettings.hasSort()) {
+      return new JSONArray();
     }
 
-    return new JSONObject().put(querySettings.getSortField(), new JSONObject().put("order", querySettings.getSortDir()));
+    JSONArray sortArray = new JSONArray();
+    for (String sortWithOrder : querySettings.getSort()) {
+      String[] tokens = sortWithOrder.split(":");
+      JSONObject sortObject = new JSONObject().put(tokens[0], new JSONObject().put("order", tokens.length<2 ? "asc" : tokens[1].toLowerCase()));
+      sortArray.put(sortObject);
+    }
+
+    return sortArray;
   }
 
   private JSONObject buildFilter() throws JSONException {
