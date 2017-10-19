@@ -8,13 +8,16 @@ index:
                type: custom
                char_filter: [html_strip]
                tokenizer: standard
-               filter: [standard,lowercase,opal_nGram_filter]
+               filter: [standard,lowercase,opal_asciifolding_filter,opal_nGram_filter]
             opal_search_analyzer:
                type: custom
                char_filter: [html_strip]
                tokenizer: standard
-               filter: [standard,lowercase]
+               filter: [standard,lowercase,opal_asciifolding_filter]
         filter:
+            opal_asciifolding_filter:
+                type: asciifolding
+                preserve_original: true
             opal_nGram_filter:
                 type: nGram
                 min_gram: 2

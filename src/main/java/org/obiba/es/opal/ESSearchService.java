@@ -89,7 +89,6 @@ public class ESSearchService implements SearchService {
     this.threadFactory = threadFactory;
   }
 
-  @Override
   public SearchSettings getConfig() {
     return settings;
   }

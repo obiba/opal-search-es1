@@ -181,7 +181,7 @@ public class ESVariablesIndexManager extends ESIndexManager implements Variables
 
     @Override
     protected XContentBuilder createMapping() {
-      return new ValueTableVariablesMapping().createMapping(getIndexType());
+      return new ValueTableVariablesMapping().createMapping(getIndexType(), esSearchService.getConfig().getLocales());
     }
 
     @Override

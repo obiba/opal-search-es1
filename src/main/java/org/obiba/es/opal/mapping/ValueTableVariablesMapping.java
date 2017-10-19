@@ -20,13 +20,14 @@ import org.obiba.magma.type.TextType;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 public class ValueTableVariablesMapping {
 
   private final ValueTypeMappings valueTypeMappings = new ValueTypeMappings();
 
   @SuppressWarnings({ "OverlyLongMethod", "PMD.NcssMethodCount" })
-  public XContentBuilder createMapping(String name) {
+  public XContentBuilder createMapping(String name, List<String> locales) {
     try {
       XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(name);
 
@@ -38,7 +39,11 @@ public class ValueTableVariablesMapping {
       MappingHelper.mapNotAnalyzedString("reference", mapping);
       MappingHelper.mapAnalyzedString("name", mapping);
       MappingHelper.mapAnalyzedString("label", mapping);
-      MappingHelper.mapAnalyzedString("label-en", mapping);
+      for (String locale : locales)
+        MappingHelper.mapAnalyzedString("label-" + locale, mapping);
+      MappingHelper.mapAnalyzedString("description", mapping);
+      for (String locale : locales)
+        MappingHelper.mapAnalyzedString("description-" + locale, mapping);
       mapString("fullName", mapping);
       mapString("entityType", mapping);
       mapString("valueType", mapping);
