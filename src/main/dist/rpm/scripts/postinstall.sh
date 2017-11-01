@@ -40,6 +40,11 @@ case "$1" in
             cp $OPAL_HOME/plugins/$OLD_PLUGIN/site.properties $OPAL_HOME/plugins/$NEW_PLUGIN/
           fi
 
+          if [ ! -z "$OLD_PLUGIN" ] && [ -f $OPAL_HOME/plugins/$OLD_PLUGIN/elasticsearch.yml ]; then
+            echo "Copying $OLD_PLUGIN/elasticsearch.yml to new installation."
+            cp $OPAL_HOME/plugins/$OLD_PLUGIN/elasticsearch.yml $OPAL_HOME/plugins/$NEW_PLUGIN/
+          fi
+
           chown -R opal:adm $OPAL_HOME/plugins/$NEW_PLUGIN
           echo '***'
           echo '*** IMPORTANT: Opal Search ES plugin has been installed, you must restart Opal server.'
