@@ -33,9 +33,9 @@ public class ValueTableVariablesMapping {
 
       mapping.startObject("properties");
 
-      mapString("project", mapping);
-      mapString("datasource", mapping);
-      mapString("table", mapping);
+      MappingHelper.mapAnalyzedString("project", mapping);
+      MappingHelper.mapAnalyzedString("datasource", mapping);
+      MappingHelper.mapAnalyzedString("table", mapping);
       MappingHelper.mapNotAnalyzedString("reference", mapping);
       MappingHelper.mapAnalyzedString("name", mapping);
       MappingHelper.mapAnalyzedString("label", mapping);
