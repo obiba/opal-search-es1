@@ -1,30 +1,11 @@
-# Opal Search Elasticsearch
+# Opal Search Elasticsearch [![Build Status](https://travis-ci.org/obiba/opal-search-es.svg?branch=master)](https://travis-ci.org/obiba/opal-search-es)
 
 Opal plugin that provides a search engine based on  [elasticsearch](http://elasticsearch.org/).
 
-Opal is OBiBa’s core database application for biobanks or epidemiological studies.
+[Opal](https://github.com/obiba/opal) is OBiBa’s core database application for biobanks or epidemiological studies.
 
-## System Requirements
-
-None
-
-## Documentation
-
-[Opal Presentation](http://www.obiba.org/pages/products/opal/)
-
-[Opal Documentation](https://wiki.obiba.org/display/OPALDOC)
-
-## Download
-
-See download and installation instructions [Opal Plugins Installation Guide](https://wiki.obiba.org/display/OPALDOC/Opal+Plugins+Installation+Guide)
-
-## Bug tracker
-
-Have a bug? Please create an issue on [OBiBa JIRA](http://jira.obiba.org/jira/browse/OPAL).
-
-## Continuous integration
-
-See [OBiBa Jenkins](https://ci.obiba.org/view/Opal/job/Opal-search-ES/).
+* Have a bug or a question? Please create an issue on [GitHub](https://github.com/obiba/opal-search-es/issues).
+* Continuous integration is on [Travis](https://travis-ci.org/obiba/opal-search-es).
 
 ## Mailing list
 
