@@ -33,7 +33,6 @@
     <github-release-plugin.version>1.2.0</github-release-plugin.version>
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-    <maven-buildnumber-plugin.version>1.2</maven-buildnumber-plugin.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.1.0</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
@@ -221,27 +220,6 @@
       </plugin>
 
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>${maven-buildnumber-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>createBuildNumber</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>create</goal>
-            </goals>
-            <configuration>
-              <format>{0,date,yyyyMMddHHmmss}</format>
-              <items>
-                <item>timestamp</item>
-              </items>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <version>${maven-resources-plugin.version}</version>
         <executions>
@@ -327,7 +305,7 @@
                   <target>
                     <echo message="Starting ant-run target configuration." />
                     <property name="deb.dir" value="${basedir}/target/deb" />
-                    <property name="deb.version" value="${project.version}-b${buildNumber}" />
+                    <property name="deb.version" value="${project.version}" />
                     <tstamp>
                       <!-- http://www.debian.org/doc/debian-policy/ch-source.html -->
                       <format property="deb.date" pattern="EEE, d MMM yyyy HH:mm:ss Z" locale="en" />
