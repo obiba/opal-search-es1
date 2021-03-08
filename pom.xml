@@ -12,7 +12,7 @@
   <groupId>org.obiba.es</groupId>
   <artifactId>opal-search-es</artifactId>
   <packaging>jar</packaging>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.2-SNAPSHOT</version>
   <name>opal-search-es</name>
   <url>http://obiba.org</url>
 
@@ -324,7 +324,7 @@
     <connection>scm:git:https://github.com/obiba/opal-search-es.git</connection>
     <developerConnection>scm:git:https://github.com/obiba/opal-search-es.git</developerConnection>
     <url>https://github.com/obiba/opal-search-es</url>
-    <tag>opal-search-es-1.1.x</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
